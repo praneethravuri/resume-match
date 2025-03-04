@@ -211,16 +211,34 @@ def generate_pdf(output_pdf_filename):
             stderr=subprocess.PIPE,
             check=True
         )
+        # Log pdflatex stdout and stderr
         logging.info("PDF generation stdout: %s", proc.stdout.decode())
-        logging.info("PDF generated successfully as 'resume.pdf'")
-        if os.path.exists("resume.pdf"):
-            os.rename("resume.pdf", output_pdf_filename)
-            logging.info("PDF renamed to '%s'", output_pdf_filename)
-        else:
-            logging.error("resume.pdf not found after pdflatex run.")
+        logging.info("PDF generation stderr: %s", proc.stderr.decode())
     except subprocess.CalledProcessError as e:
         logging.exception("PDF generation failed with CalledProcessError")
         logging.error("STDERR output: %s", e.stderr.decode())
+    
+    # Read and print the TeX Live log from resume.log (if available)
+    if os.path.exists("resume.log"):
+        try:
+            with open("resume.log", "r") as log_file:
+                tex_logs = log_file.read()
+            logging.info("TeX Live log output:\n%s", tex_logs)
+        except Exception as e:
+            logging.exception("Error reading resume.log")
+    else:
+        logging.warning("resume.log not found; no TeX Live logs available.")
+    
+    # Rename the PDF if it exists
+    if os.path.exists("resume.pdf"):
+        try:
+            os.rename("resume.pdf", output_pdf_filename)
+            logging.info("PDF renamed to '%s'", output_pdf_filename)
+        except Exception as e:
+            logging.exception("Error renaming PDF file")
+    else:
+        logging.error("resume.pdf not found after pdflatex run.")
+
 
 if __name__ == "__main__":
     generate_pdf("resume_output.pdf")
