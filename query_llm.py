@@ -42,12 +42,8 @@ def process_resume(job_description, additional_instructions, company, position, 
         logging.exception("Error loading action_verbs.json")
         return None
 
-    full_job_description = job_description
-    if additional_instructions.strip():
-        full_job_description += "\nAdditional Instructions: " + additional_instructions.strip()
-
     system_prompt = get_system_prompt()
-    user_prompt = get_user_prompt(full_job_description, resume, action_verbs)
+    user_prompt = get_user_prompt(job_description, resume, action_verbs, additional_instructions)
 
     logging.info("Calling API to enhance the resume...")
 

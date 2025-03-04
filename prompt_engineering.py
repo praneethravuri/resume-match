@@ -31,7 +31,7 @@ Guidelines:
 - If an acronym is present or you are planning to use, make sure it is defined in the final output once and then you can use the acronym.
 """
 
-def get_user_prompt(job_description, resume, action_verbs):
+def get_user_prompt(job_description, resume, action_verbs, additional_instructions):
     return f"""
 I will provide you with a resume in JSON format and a job description. Your task is to enhance the resume to match the job description while maintaining truthfulness. Return ONLY the modified resume as a valid JSON object - do not include any explanations, notes, or other text.
 
@@ -43,6 +43,9 @@ Here is my resume in JSON format:
 
 Here are the action verbs with their categories:
 {action_verbs}
+
+Here are some additional instructions:
+{additional_instructions}
 
 <strong>Key Requirements:</strong>
 1. <strong>Accuracy & Completeness</strong>: 
