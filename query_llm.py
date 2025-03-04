@@ -1,7 +1,6 @@
 import json
 import logging
 import streamlit as st
-from openai import OpenAI
 from prompt_engineering import get_system_prompt, get_user_prompt
 import json_to_pdf_converter
 
@@ -11,7 +10,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 DEEPSEEK_API_KEY = st.secrets["DEEPSEEK_API_KEY"]
 
-# Initialize the OpenAI client (using DEEPSEEK_API_KEY in this example)
+# Initialize the Deepseek client (used for the deepseek API option)
+from openai import OpenAI
 openai_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
 
 def load_resume():
@@ -28,34 +28,8 @@ def load_resume():
         logging.exception("Error loading resume data")
         return None
 
-def call_openai_api(system_prompt, user_prompt):
-    """Call the OpenAI API with the given prompts and return the response."""
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt}
-    ]
-    try:
-        response = openai_client.chat.completions.create(
-            model="deepseek-reasoner",
-            messages=messages,
-        )
-        logging.info("API call successful. Full response: %s", response)
-
-        # Check if the expected attributes exist in the response
-        if not response.choices or not response.choices[0].message:
-            logging.error("Empty or unexpected response structure received from API: %s", response)
-            return ""
-        
-        result = response.choices[0].message.content.strip()
-        logging.info("API response content: %s", result if result else "Empty response content")
-        return result
-    except Exception as e:
-        logging.exception("Error calling OpenAI API")
-        return ""
-
-
-def process_resume(job_description, additional_instructions, company, position):
-    """Enhance the resume using the LLM and generate a tailored PDF."""
+def process_resume(job_description, additional_instructions, company, position, api_choice="deepseek", job_id=""):
+    """Enhance the resume using the selected LLM and generate a tailored PDF."""
     resume = load_resume()
     if resume is None:
         logging.error("Failed to load resume.")
@@ -76,7 +50,18 @@ def process_resume(job_description, additional_instructions, company, position):
     user_prompt = get_user_prompt(full_job_description, resume, action_verbs)
 
     logging.info("Calling API to enhance the resume...")
-    llm_response = call_openai_api(system_prompt, user_prompt)
+
+    # Call the appropriate API function based on the api_choice
+    if api_choice == "openai":
+        from llm_clients.openai_client import call_openai_api
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
+        llm_response = call_openai_api(messages)
+    else:  # default: deepseek
+        from llm_clients.deepseek_client import call_deepseek_api
+        llm_response = call_deepseek_api(system_prompt, user_prompt, openai_client)
 
     try:
         cleaned_response = llm_response.replace("```", "").replace("```json", "")
@@ -88,9 +73,15 @@ def process_resume(job_description, additional_instructions, company, position):
         logging.exception("Error: The API response is not valid JSON. Response: %s", llm_response)
         return None
 
-    output_pdf_filename = f"praneeth_ravuri_resume_{company}_{position}.pdf"
+    # Create output PDF filename with optional job_id if provided
+    if job_id.strip():
+        output_pdf_filename = f"praneeth_ravuri_resume_{company}_{position}_{job_id}.pdf"
+    else:
+        output_pdf_filename = f"praneeth_ravuri_resume_{company}_{position}.pdf"
+    
     json_to_pdf_converter.generate_pdf(output_pdf_filename)
     return output_pdf_filename
 
 if __name__ == "__main__":
-    process_resume("Sample job description", "Some additional instructions", "SampleCompany", "SamplePosition")
+    # Example call with job_id included
+    process_resume("Sample job description", "Some additional instructions", "SampleCompany", "SamplePosition", "deepseek", "JOB123")
