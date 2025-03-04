@@ -176,3 +176,9 @@ cython_debug/
 repomix-output.txt
 *.pdf
 resume.json
+*.pdf
+*.out
+*.tex
+resume.tex
+resume.aux
+enhanced_resume.json
