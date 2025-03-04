@@ -2,19 +2,16 @@ import json
 import subprocess
 import os
 
-# Updated LaTeX template with escaped curly braces for literals
 latex_template = r"""
 % Praneeth Ravuri Resume
 % Converted from HTML to LaTeX - Condensed to fit on one page
 
 \documentclass[10pt,a4paper]{{article}}
 
-% Set custom font size (10.5pt)
 \usepackage{{anyfontsize}}
 \renewcommand{{\normalsize}}{{\fontsize{{10.75pt}}{{12.6pt}}\selectfont}}
 
-% Packages
-\usepackage[margin=0.25in]{{geometry}} % Reduced margins
+\usepackage[margin=0.25in]{{geometry}}
 \usepackage{{enumitem}}
 \usepackage{{hyperref}}
 \usepackage{{fontawesome}}
@@ -30,28 +27,23 @@ latex_template = r"""
 }}
 
 \setlength{{\parindent}}{{0em}}
-\setlength{{\parskip}}{{0.3em}} % Reduced paragraph spacing
+\setlength{{\parskip}}{{0.3em}}
 
-% Section title format with reduced spacing
 \titleformat{{\section}}
 {{\normalfont\large\bfseries}}
 {{}}
 {{0em}}
 {{}}[{{\titlerule}}]
 
-% Reduce spacing before and after section titles
 \titlespacing*{{\section}}{{0pt}}{{5pt}}{{3pt}}
 
-% Custom commands for header and sections
 \newcommand{{\dateplace}}[2]{{\raggedleft #1 \\ #2 \par}}
 \newcommand{{\role}}[2]{{\raggedright \textbf{{#1}} \\ #2 \par}}
 
-% Reduce itemize spacing
 \setlist[itemize]{{noitemsep, topsep=0pt, parsep=0pt, partopsep=0pt, leftmargin=*}}
 
 \begin{{document}}
 
-% Header
 \begin{{center}}
     \textbf{{\Large {name}}}\\
     \vspace{{0.2em}}
@@ -64,22 +56,18 @@ latex_template = r"""
 \end{{center}}
 \vspace{{-0.3em}}
 
-% Education Section
 \section*{{Education}}
 \vspace{{0.5em}}
 {education_section}
 
-% Experience Section
 \section*{{Experience}}
 \vspace{{0.5em}}
 {experience_section}
 
-% Skills Section
 \section*{{Skills}}
 \vspace{{0.5em}}
 {skills_section}
 
-% Projects Section
 \section*{{Projects}}
 \vspace{{0.5em}}
 {projects_section}
@@ -103,7 +91,7 @@ def generate_education_section(education_list):
             degree=edu.get('degree', ''),
             coursework=edu.get('coursework', ''),
             location=edu.get('location', ''),
-            dates=edu.get('dates', '').replace("&ndash;", "--")
+            dates=edu.get('dates', '').replace("&ndash;", "–")
         )
         sections.append(edu_entry)
     return "\n".join(sections)
@@ -124,7 +112,7 @@ def generate_experience_section(experience_list):
             company=exp.get('company', ''),
             position=exp.get('position', ''),
             location=exp.get('location', ''),
-            dates=exp.get('dates', '').replace("&ndash;", "--")
+            dates=exp.get('dates', '').replace("&ndash;", "–")
         )
         for point in exp.get('points', []):
             safe_point = point.replace("%", "\\%")
@@ -186,9 +174,7 @@ def create_latex_resume(enhanced_resume):
     return filled_template
 
 def generate_pdf(output_pdf_filename):
-    """
-    Generates a PDF resume from the enhanced_resume.json file and renames it to output_pdf_filename.
-    """
+    """Generates a PDF resume from 'enhanced_resume.json' and renames it to output_pdf_filename."""
     try:
         with open("enhanced_resume.json", "r") as f:
             enhanced_resume = json.load(f)
@@ -197,7 +183,6 @@ def generate_pdf(output_pdf_filename):
         return
     
     latex_resume = create_latex_resume(enhanced_resume)
-    # Replace any escaped sequences if needed
     latex_resume = latex_resume.replace(r"{{itemize}}", r"{itemize}")
     latex_resume = latex_resume.replace(r"{{0.5em}}", r"{0.5em}")
     latex_resume = latex_resume.replace("&", "\\&")
@@ -207,7 +192,6 @@ def generate_pdf(output_pdf_filename):
     
     print("LaTeX resume generated as 'resume.tex'")
     
-    # Run pdflatex with nonstop mode to avoid interactive errors
     try:
         subprocess.run(
             ["pdflatex", "-interaction=nonstopmode", "resume.tex"],
@@ -216,7 +200,6 @@ def generate_pdf(output_pdf_filename):
             check=True
         )
         print("PDF generated successfully as 'resume.pdf'")
-        # Rename the PDF to the desired filename
         if os.path.exists("resume.pdf"):
             os.rename("resume.pdf", output_pdf_filename)
             print(f"PDF renamed to '{output_pdf_filename}'")

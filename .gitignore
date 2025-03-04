@@ -182,3 +182,4 @@ resume.json
 resume.tex
 resume.aux
 enhanced_resume.json
+.streamlit/secrets.toml
