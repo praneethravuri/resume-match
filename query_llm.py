@@ -1,8 +1,11 @@
 import json
+import logging
 import streamlit as st
 from openai import OpenAI
 from prompt_engineering import get_system_prompt, get_user_prompt
 import json_to_pdf_converter
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Load API keys from Streamlit secrets
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
@@ -19,9 +22,10 @@ def load_resume():
         else:
             with open("resume.json", "r") as f:
                 resume = json.load(f)
+        logging.info("Resume data loaded successfully.")
         return resume
     except Exception as e:
-        print("Error loading resume data:", e)
+        logging.error("Error loading resume data: %s", e)
         return None
 
 def call_openai_api(system_prompt, user_prompt):
@@ -34,20 +38,18 @@ def call_openai_api(system_prompt, user_prompt):
         response = openai_client.chat.completions.create(
             model="deepseek-reasoner",
             messages=messages,
-            # Optionally set temperature and max_tokens
-            # temperature=0.7,
-            # max_tokens=10000
         )
+        logging.info("API call successful.")
         return response.choices[0].message.content.strip()
     except Exception as e:
-        print("Error calling OpenAI API:", e)
+        logging.error("Error calling OpenAI API: %s", e)
         return ""
 
 def process_resume(job_description, additional_instructions, company, position):
     """Enhance the resume using the LLM and generate a tailored PDF."""
     resume = load_resume()
     if resume is None:
-        print("Failed to load resume.")
+        logging.error("Failed to load resume.")
         return None
 
     # Load action verbs from local file
@@ -55,7 +57,7 @@ def process_resume(job_description, additional_instructions, company, position):
         with open("action_verbs.json", "r") as f:
             action_verbs = json.load(f)
     except Exception as e:
-        print("Error loading action_verbs.json:", e)
+        logging.error("Error loading action_verbs.json: %s", e)
         return None
 
     full_job_description = job_description
@@ -65,7 +67,7 @@ def process_resume(job_description, additional_instructions, company, position):
     system_prompt = get_system_prompt()
     user_prompt = get_user_prompt(full_job_description, resume, action_verbs)
 
-    print("Calling API to enhance the resume...")
+    logging.info("Calling API to enhance the resume...")
     llm_response = call_openai_api(system_prompt, user_prompt)
 
     try:
@@ -73,11 +75,9 @@ def process_resume(job_description, additional_instructions, company, position):
         enhanced_resume = json.loads(cleaned_response)
         with open("enhanced_resume.json", "w") as f:
             json.dump(enhanced_resume, f, indent=2)
-        print("Enhanced resume saved to 'enhanced_resume.json'")
+        logging.info("Enhanced resume saved to 'enhanced_resume.json'")
     except json.JSONDecodeError as e:
-        print("Error: The API response is not valid JSON.")
-        print("Response:", llm_response)
-        print("Error details:", e)
+        logging.error("Error: The API response is not valid JSON. Response: %s. Error details: %s", llm_response, e)
         return None
 
     output_pdf_filename = f"praneeth_ravuri_resume_{company}_{position}.pdf"
@@ -85,5 +85,4 @@ def process_resume(job_description, additional_instructions, company, position):
     return output_pdf_filename
 
 if __name__ == "__main__":
-    # For testing purposes
     process_resume("Sample job description", "Some additional instructions", "SampleCompany", "SamplePosition")

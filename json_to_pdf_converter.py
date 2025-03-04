@@ -1,6 +1,10 @@
 import json
 import subprocess
 import os
+import logging
+
+# Configure logging (if not already configured in the main app)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 latex_template = r"""
 % Praneeth Ravuri Resume
@@ -151,7 +155,6 @@ def generate_projects_section(projects_list):
         sections.append(proj_entry)
     return "\n".join(sections)
 
-
 def create_latex_resume(enhanced_resume):
     personal = enhanced_resume.get('personal', {})
     education_section = generate_education_section(enhanced_resume.get('education', []))
@@ -184,8 +187,9 @@ def generate_pdf(output_pdf_filename):
     try:
         with open("enhanced_resume.json", "r") as f:
             enhanced_resume = json.load(f)
+        logging.info("Loaded enhanced_resume.json successfully.")
     except Exception as e:
-        print("Error loading enhanced_resume.json:", e)
+        logging.error("Error loading enhanced_resume.json: %s", e)
         return
     
     latex_resume = create_latex_resume(enhanced_resume)
@@ -193,10 +197,13 @@ def generate_pdf(output_pdf_filename):
     latex_resume = latex_resume.replace(r"{{0.5em}}", r"{0.5em}")
     latex_resume = latex_resume.replace("&", "\\&")
     
-    with open("resume.tex", "w") as f:
-        f.write(latex_resume)
-    
-    print("LaTeX resume generated as 'resume.tex'")
+    try:
+        with open("resume.tex", "w") as f:
+            f.write(latex_resume)
+        logging.info("LaTeX resume generated as 'resume.tex'")
+    except Exception as e:
+        logging.error("Error writing resume.tex: %s", e)
+        return
     
     try:
         subprocess.run(
@@ -205,13 +212,15 @@ def generate_pdf(output_pdf_filename):
             stderr=subprocess.PIPE,
             check=True
         )
-        print("PDF generated successfully as 'resume.pdf'")
+        logging.info("PDF generated successfully as 'resume.pdf'")
         if os.path.exists("resume.pdf"):
             os.rename("resume.pdf", output_pdf_filename)
-            print(f"PDF renamed to '{output_pdf_filename}'")
+            logging.info("PDF renamed to '%s'", output_pdf_filename)
+        else:
+            logging.error("resume.pdf not found after pdflatex run.")
     except subprocess.CalledProcessError as e:
-        print(f"PDF generation failed: {e}")
-        print(e.stderr.decode())
+        logging.error("PDF generation failed: %s", e)
+        logging.error(e.stderr.decode())
 
 if __name__ == "__main__":
     generate_pdf("resume_output.pdf")

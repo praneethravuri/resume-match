@@ -1,6 +1,11 @@
 import streamlit as st
 import os
 from query_llm import process_resume
+import logging
+
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
 
 # Configure the Streamlit page
 st.set_page_config(page_title="Resume Tailor & PDF Generator", layout="centered")
