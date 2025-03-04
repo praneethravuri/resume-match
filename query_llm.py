@@ -69,11 +69,9 @@ def process_resume(job_description, additional_instructions, company, position, 
         logging.exception("Error: The API response is not valid JSON. Response: %s", llm_response)
         return None
 
-    # Create output PDF filename with optional job_id if provided
-    if job_id.strip():
-        output_pdf_filename = f"praneeth_ravuri_resume_{company}_{position}_{job_id}.pdf"
-    else:
-        output_pdf_filename = f"praneeth_ravuri_resume_{company}_{position}.pdf"
+    # Create output PDF filename using the new function
+    from utils.helpers import generate_pdf_filename
+    output_pdf_filename = generate_pdf_filename(company, position, job_id)
     
     json_to_pdf_converter.generate_pdf(output_pdf_filename)
     return output_pdf_filename
