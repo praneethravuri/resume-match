@@ -205,12 +205,13 @@ def generate_pdf(output_pdf_filename):
         return
     
     try:
-        subprocess.run(
+        proc = subprocess.run(
             ["pdflatex", "-interaction=nonstopmode", "resume.tex"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=True
         )
+        logging.info("PDF generation stdout: %s", proc.stdout.decode())
         logging.info("PDF generated successfully as 'resume.pdf'")
         if os.path.exists("resume.pdf"):
             os.rename("resume.pdf", output_pdf_filename)
@@ -218,8 +219,8 @@ def generate_pdf(output_pdf_filename):
         else:
             logging.error("resume.pdf not found after pdflatex run.")
     except subprocess.CalledProcessError as e:
-        logging.exception("PDF generation failed")
-        logging.error(e.stderr.decode())
+        logging.exception("PDF generation failed with CalledProcessError")
+        logging.error("STDERR output: %s", e.stderr.decode())
 
 if __name__ == "__main__":
     generate_pdf("resume_output.pdf")
