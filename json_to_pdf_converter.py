@@ -137,7 +137,12 @@ def generate_skills_section(skills_list):
 def generate_projects_section(projects_list):
     sections = []
     for proj in projects_list:
-        proj_entry = r"\textbf{{{title}}}".format(title=proj.get('title', ''))
+        title = proj.get('title', '')
+        project_link = proj.get('projectLink', '')
+        if project_link:
+            proj_entry = r"\href{{{link}}}{{\textbf{{{title}}}}}".format(link=project_link, title=title)
+        else:
+            proj_entry = r"\textbf{{{title}}}".format(title=title)
         proj_entry += "\n\\vspace{{0.5em}}\n\\begin{{itemize}}"
         for point in proj.get('points', []):
             safe_point = point.replace("%", "\\%")
@@ -145,6 +150,7 @@ def generate_projects_section(projects_list):
         proj_entry += "\n\\end{itemize}\n\\vspace{{0.5em}}"
         sections.append(proj_entry)
     return "\n".join(sections)
+
 
 def create_latex_resume(enhanced_resume):
     personal = enhanced_resume.get('personal', {})
