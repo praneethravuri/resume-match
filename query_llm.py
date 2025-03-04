@@ -25,7 +25,7 @@ def load_resume():
         logging.info("Resume data loaded successfully.")
         return resume
     except Exception as e:
-        logging.error("Error loading resume data: %s", e)
+        logging.exception("Error loading resume data")
         return None
 
 def call_openai_api(system_prompt, user_prompt):
@@ -42,7 +42,7 @@ def call_openai_api(system_prompt, user_prompt):
         logging.info("API call successful.")
         return response.choices[0].message.content.strip()
     except Exception as e:
-        logging.error("Error calling OpenAI API: %s", e)
+        logging.exception("Error calling OpenAI API")
         return ""
 
 def process_resume(job_description, additional_instructions, company, position):
@@ -52,12 +52,11 @@ def process_resume(job_description, additional_instructions, company, position):
         logging.error("Failed to load resume.")
         return None
 
-    # Load action verbs from local file
     try:
         with open("action_verbs.json", "r") as f:
             action_verbs = json.load(f)
     except Exception as e:
-        logging.error("Error loading action_verbs.json: %s", e)
+        logging.exception("Error loading action_verbs.json")
         return None
 
     full_job_description = job_description
@@ -77,7 +76,7 @@ def process_resume(job_description, additional_instructions, company, position):
             json.dump(enhanced_resume, f, indent=2)
         logging.info("Enhanced resume saved to 'enhanced_resume.json'")
     except json.JSONDecodeError as e:
-        logging.error("Error: The API response is not valid JSON. Response: %s. Error details: %s", llm_response, e)
+        logging.exception("Error: The API response is not valid JSON. Response: %s", llm_response)
         return None
 
     output_pdf_filename = f"praneeth_ravuri_resume_{company}_{position}.pdf"

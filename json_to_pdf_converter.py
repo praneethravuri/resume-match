@@ -3,7 +3,6 @@ import subprocess
 import os
 import logging
 
-# Configure logging (if not already configured in the main app)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 latex_template = r"""
@@ -189,7 +188,7 @@ def generate_pdf(output_pdf_filename):
             enhanced_resume = json.load(f)
         logging.info("Loaded enhanced_resume.json successfully.")
     except Exception as e:
-        logging.error("Error loading enhanced_resume.json: %s", e)
+        logging.exception("Error loading enhanced_resume.json")
         return
     
     latex_resume = create_latex_resume(enhanced_resume)
@@ -202,7 +201,7 @@ def generate_pdf(output_pdf_filename):
             f.write(latex_resume)
         logging.info("LaTeX resume generated as 'resume.tex'")
     except Exception as e:
-        logging.error("Error writing resume.tex: %s", e)
+        logging.exception("Error writing resume.tex")
         return
     
     try:
@@ -219,7 +218,7 @@ def generate_pdf(output_pdf_filename):
         else:
             logging.error("resume.pdf not found after pdflatex run.")
     except subprocess.CalledProcessError as e:
-        logging.error("PDF generation failed: %s", e)
+        logging.exception("PDF generation failed")
         logging.error(e.stderr.decode())
 
 if __name__ == "__main__":
