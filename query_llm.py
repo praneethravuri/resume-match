@@ -39,11 +39,20 @@ def call_openai_api(system_prompt, user_prompt):
             model="deepseek-reasoner",
             messages=messages,
         )
-        logging.info("API call successful.")
-        return response.choices[0].message.content.strip()
+        logging.info("API call successful. Full response: %s", response)
+
+        # Check if the expected attributes exist in the response
+        if not response.choices or not response.choices[0].message:
+            logging.error("Empty or unexpected response structure received from API: %s", response)
+            return ""
+        
+        result = response.choices[0].message.content.strip()
+        logging.info("API response content: %s", result if result else "Empty response content")
+        return result
     except Exception as e:
         logging.exception("Error calling OpenAI API")
         return ""
+
 
 def process_resume(job_description, additional_instructions, company, position):
     """Enhance the resume using the LLM and generate a tailored PDF."""
