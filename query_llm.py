@@ -3,6 +3,9 @@ import logging
 import streamlit as st
 from prompt_engineering import get_system_prompt, get_user_prompt
 import json_to_pdf_converter
+import asyncio
+from utils.helpers import generate_pdf_filename
+from utils.text_processing import compute_matching_score
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -28,7 +31,7 @@ def load_resume():
         logging.exception("Error loading resume data")
         return None
 
-def process_resume(job_description, additional_instructions, company, position, api_choice="deepseek", job_id=""):
+async def process_resume(job_description, additional_instructions, company, position, api_choice="deepseek", job_id=""):
     """Enhance the resume using the selected LLM and generate a tailored PDF."""
     resume = load_resume()
     if resume is None:
@@ -48,16 +51,22 @@ def process_resume(job_description, additional_instructions, company, position, 
     logging.info("Calling API to enhance the resume...")
 
     # Call the appropriate API function based on the api_choice
-    if api_choice == "openai":
-        from llm_clients.openai_client import call_openai_api
-        messages = [
+    if api_choice == "open ai":
+        from llm_clients.openai_client import async_call_openai_api
+        llm_response = await async_call_openai_api([
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
-        ]
-        llm_response = call_openai_api(messages)
-    else:  # default: deepseek
-        from llm_clients.deepseek_client import call_deepseek_api
-        llm_response = call_deepseek_api(system_prompt, user_prompt, openai_client)
+        ])
+    elif api_choice == "deepseek":
+        from llm_clients.deepseek_client import async_call_deepseek_api
+        llm_response = await async_call_deepseek_api(system_prompt, user_prompt, openai_client)
+    elif api_choice == "local":
+        # Local mode: do not call an external LLM, return the original resume
+        logging.info("Local mode selected: returning original resume without enhancement.")
+        llm_response = json.dumps(resume)
+    else:
+        logging.error("Unknown API choice. Defaulting to local mode.")
+        llm_response = json.dumps(resume)
 
     try:
         cleaned_response = llm_response.replace("```", "").replace("```json", "")
@@ -69,11 +78,16 @@ def process_resume(job_description, additional_instructions, company, position, 
         logging.exception("Error: The API response is not valid JSON. Response: %s", llm_response)
         return None
 
-    from utils.helpers import generate_pdf_filename
-    output_pdf_filename = generate_pdf_filename(company, position, job_id)
-    
-    json_to_pdf_converter.generate_pdf(output_pdf_filename)
+    output_pdf_filename = None
+    try:
+        output_pdf_filename = generate_pdf_filename(company, position, job_id)
+        json_to_pdf_converter.generate_pdf(output_pdf_filename)
+    except Exception as e:
+        logging.exception("Error generating PDF: %s", e)
+        return None
+
     return output_pdf_filename
 
 if __name__ == "__main__":
-    process_resume("Sample job description", "Some additional instructions", "SampleCompany", "SamplePosition", "deepseek", "JOB123")
+    # For testing purposes, run the process_resume function with dummy data
+    asyncio.run(process_resume("Sample job description", "Some additional instructions", "SampleCompany", "SamplePosition", "deepseek", "JOB123"))

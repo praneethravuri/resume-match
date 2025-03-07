@@ -3,3 +3,5 @@ openai
 python-dotenv
 pymongo
 PyPDF2
+scikit-learn
+nltk

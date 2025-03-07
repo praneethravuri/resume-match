@@ -1,11 +1,11 @@
 import streamlit as st
 import os
 import logging
-from query_llm import process_resume
+from query_llm import process_resume  # async version
 from db.operations import insert_application, update_application_status
-from utils.helpers import cleanup_generated_files, generate_pdf_filename  # Updated import
-import pymongo  # Only if you need direct connection elsewhere
+from utils.helpers import cleanup_generated_files, generate_pdf_filename
 from session import init_session_state
+import asyncio
 
 # Initialize shared session state
 init_session_state()
@@ -16,23 +16,23 @@ st.set_page_config(page_title="Resume Tailor & PDF Generator", layout="centered"
 st.title("Resume Tailor & PDF Generator")
 st.write("Enter the details below to generate a tailored resume PDF.")
 
-# --- API Selection ---
-api_choice = st.radio("Select API", options=["Open AI", "Deepseek"], index=1).lower()
+# Use a form for inputs
+with st.form(key="resume_form"):
+    company = st.text_input("Company Name")
+    job_title = st.text_input("Job Title")
+    job_id = st.text_input("Job ID (Optional)")
+    job_description = st.text_area("Job Description", height=200)
+    additional_instructions = st.text_area("Additional Instructions", height=100)
+    api_choice = st.radio("Select API", options=["Open AI", "Deepseek", "Local"], index=1).lower()
+    submit_button = st.form_submit_button(label="Generate PDF")
 
-# Input fields for resume generation
-company = st.text_input("Company Name")
-job_title = st.text_input("Job Title")
-job_id = st.text_input("Job ID (Optional)")
-job_description = st.text_area("Job Description", height=200)
-additional_instructions = st.text_area("Additional Instructions", height=100)
-
-# Generate PDF button logic
-if st.button("Generate PDF") and company and job_title and job_description:
+if submit_button and company and job_title and job_description:
     if st.session_state.pdf_path:
         cleanup_generated_files(st.session_state.pdf_path)
     try:
         with st.spinner("Processing your resume..."):
-            pdf_path = process_resume(job_description, additional_instructions, company, job_title, api_choice, job_id)
+            # Use asyncio to call async process_resume
+            pdf_path = asyncio.run(process_resume(job_description, additional_instructions, company, job_title, api_choice, job_id))
             st.session_state.pdf_path = pdf_path
             if os.path.exists("enhanced_resume.json"):
                 with open("enhanced_resume.json", "r") as f:

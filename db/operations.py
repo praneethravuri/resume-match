@@ -8,7 +8,7 @@ def get_applications_collection():
     collection = db[st.secrets["COLLECTION_NAME"]]
     return collection
 
-def insert_application(company, title, job_id, resume_content, job_description, status="not applied"):
+def insert_application(company, title, job_id, resume_content, job_description, status="not applied", matching_score=None):
     """
     Inserts a new application record into the MongoDB collection.
     If status is 'applied', adds the current date as 'date_applied'.
@@ -22,6 +22,8 @@ def insert_application(company, title, job_id, resume_content, job_description, 
         "job_description": job_description,
         "status": status,
     }
+    if matching_score is not None:
+        doc["matching_score"] = matching_score
     if status == "applied":
         doc["date_applied"] = datetime.now().strftime("%Y-%m-%d")
     result = collection.insert_one(doc)

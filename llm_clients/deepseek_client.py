@@ -1,4 +1,5 @@
 import logging
+import asyncio
 
 def call_deepseek_api(system_prompt, user_prompt, openai_client):
     messages = [
@@ -18,5 +19,8 @@ def call_deepseek_api(system_prompt, user_prompt, openai_client):
         logging.info("API response content: %s", result if result else "Empty response content")
         return result
     except Exception as e:
-        logging.exception("Error calling OpenAI API")
+        logging.exception("Error calling Deepseek API")
         return ""
+
+async def async_call_deepseek_api(system_prompt, user_prompt, openai_client):
+    return await asyncio.to_thread(call_deepseek_api, system_prompt, user_prompt, openai_client)
