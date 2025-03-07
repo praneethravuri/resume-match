@@ -5,6 +5,10 @@ from query_llm import process_resume
 from db.operations import insert_application, update_application_status
 from utils.helpers import cleanup_generated_files, generate_pdf_filename  # Updated import
 import pymongo  # Only if you need direct connection elsewhere
+from session import init_session_state
+
+# Initialize shared session state
+init_session_state()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -22,16 +26,6 @@ job_id = st.text_input("Job ID (Optional)")
 job_description = st.text_area("Job Description", height=200)
 additional_instructions = st.text_area("Additional Instructions", height=100)
 
-# Initialize session state keys
-if "pdf_downloaded" not in st.session_state:
-    st.session_state.pdf_downloaded = False
-if "resume_content" not in st.session_state:
-    st.session_state.resume_content = ""
-if "pdf_path" not in st.session_state:
-    st.session_state.pdf_path = ""
-if "application_id" not in st.session_state:
-    st.session_state.application_id = None
-
 # Generate PDF button logic
 if st.button("Generate PDF") and company and job_title and job_description:
     if st.session_state.pdf_path:
@@ -46,6 +40,7 @@ if st.button("Generate PDF") and company and job_title and job_description:
         if pdf_path and os.path.exists(pdf_path):
             with open(pdf_path, "rb") as f:
                 pdf_data = f.read()
+            st.session_state.pdf_data = pdf_data  # Store PDF data in session state
             download_filename = generate_pdf_filename(company, job_title, job_id)
             
             # Insert a new application record with status "not applied"

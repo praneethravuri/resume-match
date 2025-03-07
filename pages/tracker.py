@@ -5,6 +5,10 @@ from json_to_pdf_converter import generate_pdf
 from db.operations import get_all_applications, update_application_status, delete_application
 from utils.helpers import cleanup_generated_files, generate_pdf_filename  # Updated import
 import pandas as pd
+from session import init_session_state
+
+# Initialize shared session state
+init_session_state()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 st.set_page_config(page_title="Job Application Tracker", page_icon="📋", layout="wide")

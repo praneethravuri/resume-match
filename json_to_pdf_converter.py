@@ -2,7 +2,11 @@ import json
 import subprocess
 import os
 import logging
+import PyPDF2  # New dependency for counting PDF pages
 
+from utils.helpers import generate_pdf_filename  # Import if needed in the file
+
+# Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 latex_template = r"""
@@ -181,8 +185,15 @@ def create_latex_resume(enhanced_resume):
     )
     return filled_template
 
+def count_pdf_pages(pdf_filename):
+    """Return the number of pages in the PDF file using PyPDF2."""
+    with open(pdf_filename, "rb") as f:
+        reader = PyPDF2.PdfReader(f)
+        return len(reader.pages)
+
 def generate_pdf(output_pdf_filename):
-    """Generates a PDF resume from 'enhanced_resume.json' and renames it to output_pdf_filename."""
+    """Generates a PDF resume from 'enhanced_resume.json', then adjusts the last project until the PDF is one page."""
+    # Load enhanced resume and create LaTeX file
     try:
         with open("enhanced_resume.json", "r") as f:
             enhanced_resume = json.load(f)
@@ -211,25 +222,12 @@ def generate_pdf(output_pdf_filename):
             stderr=subprocess.PIPE,
             check=True
         )
-        # Log pdflatex stdout and stderr
         logging.info("PDF generation stdout: %s", proc.stdout.decode())
         logging.info("PDF generation stderr: %s", proc.stderr.decode())
     except subprocess.CalledProcessError as e:
         logging.exception("PDF generation failed with CalledProcessError")
         logging.error("STDERR output: %s", e.stderr.decode())
     
-    # Read and print the TeX Live log from resume.log (if available)
-    if os.path.exists("resume.log"):
-        try:
-            with open("resume.log", "r") as log_file:
-                tex_logs = log_file.read()
-            logging.info("TeX Live log output:\n%s", tex_logs)
-        except Exception as e:
-            logging.exception("Error reading resume.log")
-    else:
-        logging.warning("resume.log not found; no TeX Live logs available.")
-    
-    # Rename the PDF if it exists
     if os.path.exists("resume.pdf"):
         try:
             os.rename("resume.pdf", output_pdf_filename)
@@ -238,7 +236,74 @@ def generate_pdf(output_pdf_filename):
             logging.exception("Error renaming PDF file")
     else:
         logging.error("resume.pdf not found after pdflatex run.")
+        return
 
+    # Check number of pages in the generated PDF
+    try:
+        page_count = count_pdf_pages(output_pdf_filename)
+        logging.info("Initial PDF page count: %d", page_count)
+    except Exception as e:
+        logging.exception("Error counting PDF pages")
+        return
 
-if __name__ == "__main__":
-    generate_pdf("resume_output.pdf")
+    # Iteratively remove points from the last project until PDF is exactly one page.
+    while page_count > 1:
+        logging.info("PDF has %d pages, adjusting projects...", page_count)
+        try:
+            with open("enhanced_resume.json", "r") as f:
+                enhanced_resume = json.load(f)
+        except Exception as e:
+            logging.exception("Error loading enhanced_resume.json during adjustment")
+            break
+
+        # Check if there is at least one project
+        if "projects" in enhanced_resume and enhanced_resume["projects"]:
+            last_project = enhanced_resume["projects"][-1]
+            if "points" in last_project and len(last_project["points"]) >= 2:
+                removed_point = last_project["points"].pop()  # Remove the last bullet point
+                logging.info("Removed a bullet point: %s", removed_point)
+            else:
+                logging.info("Removing entire project because it has fewer than 2 points.")
+                enhanced_resume["projects"].pop()  # Remove the whole project
+        else:
+            logging.info("No projects left to adjust.")
+            break
+
+        # Save updated resume JSON
+        with open("enhanced_resume.json", "w") as f:
+            json.dump(enhanced_resume, f, indent=2)
+
+        # Regenerate the LaTeX resume and PDF
+        latex_resume = create_latex_resume(enhanced_resume)
+        latex_resume = latex_resume.replace(r"{{itemize}}", r"{itemize}")
+        latex_resume = latex_resume.replace(r"{{0.5em}}", r"{0.5em}")
+        latex_resume = latex_resume.replace("&", "\\&")
+        with open("resume.tex", "w") as f:
+            f.write(latex_resume)
+        logging.info("Regenerated resume.tex with updated projects.")
+
+        try:
+            proc = subprocess.run(
+                ["pdflatex", "-interaction=nonstopmode", "resume.tex"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True
+            )
+            logging.info("Regenerated PDF stdout: %s", proc.stdout.decode())
+        except subprocess.CalledProcessError as e:
+            logging.exception("PDF regeneration failed during adjustment")
+            break
+
+        if os.path.exists("resume.pdf"):
+            try:
+                os.rename("resume.pdf", output_pdf_filename)
+            except Exception as e:
+                logging.exception("Error renaming regenerated PDF")
+        try:
+            page_count = count_pdf_pages(output_pdf_filename)
+            logging.info("New PDF page count: %d", page_count)
+        except Exception as e:
+            logging.exception("Error counting pages after regeneration")
+            break
+
+    logging.info("Final PDF page count: %d", page_count)

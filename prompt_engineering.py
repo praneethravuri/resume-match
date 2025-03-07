@@ -1,27 +1,15 @@
-# Import required libraries once at the module level
 import re
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 
-# Initialize NLTK resources once
-def initialize_nltk():
-    """Initialize NLTK resources needed for text processing"""
-    try:
-        nltk.data.find('tokenizers/punkt')
-    except LookupError:
-        nltk.download('punkt')
-    
-    try:
-        nltk.data.find('corpora/stopwords')
-    except LookupError:
-        nltk.download('stopwords')
-    
-    # Return the stopwords set for reuse
-    return set(stopwords.words('english'))
+# Download NLTK resources once at module startup
+nltk.download('punkt', quiet=True)
+nltk.download('punkt_tab', quiet=True)  # Added to download the missing resource
+nltk.download('stopwords', quiet=True)
 
-# Initialize once
-STOP_WORDS = initialize_nltk()
+# Load stopwords only once
+STOP_WORDS = set(stopwords.words('english'))
 
 def clean_text(text):
     """
@@ -34,31 +22,18 @@ def clean_text(text):
     if not text:
         return ""
         
-    # Convert to lowercase
     text = text.lower()
-    
-    # Remove special characters and normalize spacing
     text = re.sub(r'[^\w\s]', ' ', text)
     text = re.sub(r'\s+', ' ', text).strip()
-    
-    # Tokenize the text
     word_tokens = word_tokenize(text)
-    
-    # Remove excessive stopwords, but keep some to preserve readability
     filtered_text = []
     prev_word = ""
     for word in word_tokens:
-        # Keep consecutive stopwords to a minimum (avoid removing all)
         if word not in STOP_WORDS or prev_word not in STOP_WORDS:
             filtered_text.append(word)
         prev_word = word
-        
-    # Join the filtered words back into a string
     cleaned_text = ' '.join(filtered_text)
-    
-    # Capitalize first letter of sentences
     cleaned_text = '. '.join(s.capitalize() for s in cleaned_text.split('. '))
-    
     return cleaned_text
 
 def get_system_prompt():
@@ -73,11 +48,8 @@ Core Principles:
 - Preserve all authentic skills, experiences, and personal details
 """
 
-
-
 def get_user_prompt(job_description, resume, action_verbs, additional_instructions):
     """Generate optimized user prompt with cleaned text inputs"""
-    # Clean the job description and additional instructions
     cleaned_job_description = clean_text(job_description)
     cleaned_instructions = clean_text(additional_instructions) if additional_instructions else ""
     

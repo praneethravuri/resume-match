@@ -69,7 +69,6 @@ def process_resume(job_description, additional_instructions, company, position, 
         logging.exception("Error: The API response is not valid JSON. Response: %s", llm_response)
         return None
 
-    # Create output PDF filename using the new function
     from utils.helpers import generate_pdf_filename
     output_pdf_filename = generate_pdf_filename(company, position, job_id)
     
@@ -77,5 +76,4 @@ def process_resume(job_description, additional_instructions, company, position, 
     return output_pdf_filename
 
 if __name__ == "__main__":
-    # Example call with job_id included
     process_resume("Sample job description", "Some additional instructions", "SampleCompany", "SamplePosition", "deepseek", "JOB123")
