@@ -6,6 +6,7 @@ def call_deepseek_api(system_prompt, user_prompt, openai_client):
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt}
     ]
+    logging.info("Calling Deepseek API with messages: %s", messages)
     try:
         response = openai_client.chat.completions.create(
             model="deepseek-reasoner",
@@ -23,4 +24,5 @@ def call_deepseek_api(system_prompt, user_prompt, openai_client):
         return ""
 
 async def async_call_deepseek_api(system_prompt, user_prompt, openai_client):
+    logging.info("Asynchronously calling Deepseek API.")
     return await asyncio.to_thread(call_deepseek_api, system_prompt, user_prompt, openai_client)
