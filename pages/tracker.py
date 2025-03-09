@@ -1,11 +1,11 @@
 import streamlit as st
 import os
 import logging
-from json_to_pdf_converter import generate_pdf
 from db.operations import get_all_applications, update_application_status, delete_application
-from utils.helpers import cleanup_generated_files, generate_pdf_filename
+from utils.helpers import generate_markdown_resume
 import pandas as pd
 from session import init_session_state
+import json
 
 # Initialize shared session state
 init_session_state()
@@ -99,19 +99,10 @@ def main():
                     st.success("Updated!")
                     st.experimental_rerun()
             with col2:
-                if st.button("Generate PDF", key=f"gen_{doc['_id']}"):
-                    with st.spinner("Generating..."):
-                        pdf_data, filename = generate_pdf_for_document(doc)
-                        if pdf_data:
-                            st.download_button(
-                                label="Download",
-                                data=pdf_data,
-                                file_name=filename,
-                                mime="application/pdf",
-                                key=f"dl_{doc['_id']}"
-                            )
-                        else:
-                            st.error("Failed to generate PDF")
+                if st.button("Show Markdown", key=f"gen_{doc['_id']}"):
+                    markdown_resume = generate_markdown_for_document(doc)
+                    st.markdown("### Resume Markdown")
+                    st.code(markdown_resume, language="markdown")
             with col3:
                 if st.button("Delete", key=f"delete_{doc['_id']}"):
                     delete_application(doc["_id"])
@@ -122,18 +113,14 @@ def main():
             if i < len(filtered_apps) - 1:
                 st.divider()
 
-def generate_pdf_for_document(doc):
+def generate_markdown_for_document(doc):
+    # Write the stored resume markdown content to a temporary file and read it back
     with open("enhanced_resume.json", "w") as f:
         f.write(doc["resume_content"])
-    output_pdf_filename = generate_pdf_filename(doc['company_name'], doc['title'], doc.get("job_id", ""))
-    generate_pdf(output_pdf_filename)
-    if os.path.exists(output_pdf_filename):
-        with open(output_pdf_filename, "rb") as f:
-            pdf_data = f.read()
-        cleanup_generated_files(output_pdf_filename)
-        return pdf_data, output_pdf_filename
-    else:
-        return None, None
+    with open("enhanced_resume.json", "r") as f:
+        enhanced_resume = json.load(f)
+    markdown_resume = generate_markdown_resume(enhanced_resume)
+    return markdown_resume
 
 if __name__ == "__main__":
     main()

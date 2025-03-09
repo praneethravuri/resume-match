@@ -2,7 +2,7 @@ from openai import OpenAI
 import asyncio
 
 def call_openai_api(messages):
-    client = OpenAI()  # Uses default configuration (ensure your OPENAI_API_KEY is set appropriately)
+    client = OpenAI()
     completion = client.chat.completions.create(
         model="gpt-4o",
         messages=messages,

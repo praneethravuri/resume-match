@@ -2,9 +2,8 @@ import json
 import logging
 import streamlit as st
 from prompt_engineering import get_system_prompt, get_user_prompt
-import json_to_pdf_converter
 import asyncio
-from utils.helpers import generate_pdf_filename
+from utils.helpers import generate_pdf_filename  # Note: This is no longer used for PDF generation
 from utils.text_processing import compute_matching_score
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -32,7 +31,7 @@ def load_resume():
         return None
 
 async def process_resume(job_description, additional_instructions, company, position, api_choice="deepseek", job_id=""):
-    """Enhance the resume using the selected LLM and generate a tailored PDF."""
+    """Enhance the resume using the selected LLM and generate a tailored Markdown resume."""
     resume = load_resume()
     if resume is None:
         logging.error("Failed to load resume.")
@@ -61,7 +60,6 @@ async def process_resume(job_description, additional_instructions, company, posi
         from llm_clients.deepseek_client import async_call_deepseek_api
         llm_response = await async_call_deepseek_api(system_prompt, user_prompt, openai_client)
     elif api_choice == "local":
-        # Local mode: do not call an external LLM, return the original resume
         logging.info("Local mode selected: returning original resume without enhancement.")
         llm_response = json.dumps(resume)
     else:
@@ -78,15 +76,10 @@ async def process_resume(job_description, additional_instructions, company, posi
         logging.exception("Error: The API response is not valid JSON. Response: %s", llm_response)
         return None
 
-    output_pdf_filename = None
-    try:
-        output_pdf_filename = generate_pdf_filename(company, position, job_id)
-        json_to_pdf_converter.generate_pdf(output_pdf_filename)
-    except Exception as e:
-        logging.exception("Error generating PDF: %s", e)
-        return None
-
-    return output_pdf_filename
+    # Generate Markdown resume instead of PDF
+    from utils.helpers import generate_markdown_resume
+    markdown_resume = generate_markdown_resume(enhanced_resume)
+    return markdown_resume
 
 if __name__ == "__main__":
     # For testing purposes, run the process_resume function with dummy data
