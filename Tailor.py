@@ -4,6 +4,7 @@ import asyncio
 import json
 from utils.format_resume_data import render_resume
 import logging
+from db.operations import insert_application
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logging.info("Tailor page loaded.")
@@ -35,7 +36,12 @@ with st.form(key="resume_form"):
                     process_resume(job_description, additional_instructions, company, job_title, api_choice, job_id)
                 )
             logging.info("Received resume data from process_resume.")
+            
             resume_data_dict = json.loads(resume_data)
+            
+            application_id = insert_application(company, job_title, job_id, resume_data_dict, job_description)
+            logging.info("Application inserted with ID: %s", application_id)
+            
             render_resume(resume_data_dict)
             logging.info("Rendered resume data successfully.")
         except Exception as e:

@@ -3,6 +3,7 @@ import logging
 import json
 from db.operations import get_all_applications, update_application_status, delete_application
 from utils.helpers import generate_markdown_resume
+from utils.format_resume_data import render_resume
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logging.info("Tracker page loaded.")
@@ -83,35 +84,21 @@ def main():
                     update_application_status(doc["_id"], new_status)
                     st.success("Updated!")
                     logging.info("Application ID %s status changed from %s to %s", doc["_id"], current_status, new_status)
-                    st.experimental_rerun()
+                    st.rerun()
             with col2:
                 if st.button("Show Markdown", key=f"gen_{doc['_id']}"):
-                    markdown_resume = generate_markdown_for_document(doc)
-                    st.markdown("### Resume Markdown")
-                    for section in markdown_resume.split("\n\n"):
-                        if section.strip():
-                            st.code(section, language="markdown")
-                    logging.info("Displayed markdown resume for application ID %s", doc["_id"])
+                    st.markdown("### Resume Points")
+                    render_resume(doc.get("resume_content"))
             with col3:
                 if st.button("Delete", key=f"delete_{doc['_id']}"):
                     delete_application(doc["_id"])
                     st.success("Application deleted!")
                     logging.info("Deleted application ID %s", doc["_id"])
-                    st.experimental_rerun()
+                    st.rerun()
             with st.expander("Job Description"):
                 st.write(doc.get('job_description', 'No description available.'))
             if i < len(filtered_apps) - 1:
                 st.divider()
-
-def generate_markdown_for_document(doc):
-    """
-    Convert the stored resume markdown content (a JSON string) back into a dictionary,
-    then generate the final Markdown using our helper function.
-    """
-    logging.info("Generating markdown resume for document ID: %s", doc.get("_id"))
-    enhanced_resume = json.loads(doc["resume_content"])
-    markdown_resume = generate_markdown_resume(enhanced_resume)
-    return markdown_resume
 
 if __name__ == "__main__":
     main()

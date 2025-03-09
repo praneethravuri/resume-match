@@ -4,40 +4,42 @@ import logging
 def render_coursework(coursework):
     logging.info("Rendering coursework, total items: %d", len(coursework))
     n = len(coursework)
-    st.write("## Coursework")
+    # Aggregate first and second half of coursework into strings
+    coursework_first = ", ".join(coursework[0:n//2])
+    coursework_second = ", ".join(coursework[n//2:])
     
-    st.write("### First Half")
-    for i in range(n // 2):
-        st.write(f"* {coursework[i]}")
-        
-    st.write("### Second Half")
-    for i in range(n // 2, n):
-        st.write(f"* {coursework[i]}")
-    logging.info("Coursework rendered.")
+    st.write("## Coursework")
+    st.code(f"Coursework: {coursework_first}", language="text")
+    st.code(f"**Coursework**: {coursework_second}", language="text")
 
 def render_work_experience(experience):
     logging.info("Rendering work experience, total jobs: %d", len(experience))
     st.write("## Work Experience")
     for job in experience:
-        st.write(f"### {job.get('company', 'Unknown Company')}")
-        for point in job.get('points', []):
-            st.write(f"* {point}")
+        header = f"### {job.get('company', 'Unknown Company')}"
+        st.write(header)
+        # Aggregate bullet points into a single string with dashes
+        points = "\n".join([f"{point}" for point in job.get('points', [])])
+        st.code(points, language="text")
     logging.info("Work experience rendered.")
             
 def render_projects(projects):
     logging.info("Rendering projects, total projects: %d", len(projects))
     st.write("## Projects")
     for project in projects:
-        st.write(f"### {project.get('title', 'Untitled Project')}")
-        for point in project.get('points', []):
-            st.write(f"* {point}")
+        header = f"### {project.get('title', 'Untitled Project')}"
+        st.write(header)
+        points = "\n".join([f"{point}" for point in project.get('points', [])])
+        st.code(points, language="text")
     logging.info("Projects rendered.")
             
 def render_skills(skills):
     logging.info("Rendering skills, total categories: %d", len(skills))
     st.write("## Skills")
     for category in skills:
-        st.write(f"**{category.get('label', '')}**: {category.get('content', '')}")
+        # Display each skill category in a code block for copyability
+        content = category.get('content', '')
+        st.code(f"{category.get('label', '')}: {content}", language="text")
     logging.info("Skills rendered.")
         
 def render_resume(resume_data):
