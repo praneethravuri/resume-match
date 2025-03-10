@@ -10,7 +10,7 @@ def render_coursework(coursework):
     
     st.write("## Coursework")
     st.code(f"Coursework: {coursework_first}", language="text")
-    st.code(f"**Coursework**: {coursework_second}", language="text")
+    st.code(f"Coursework: {coursework_second}", language="text")
 
 def render_work_experience(experience):
     logging.info("Rendering work experience, total jobs: %d", len(experience))
@@ -19,7 +19,7 @@ def render_work_experience(experience):
         header = f"### {job.get('company', 'Unknown Company')}"
         st.write(header)
         # Aggregate bullet points into a single string with dashes
-        points = "\n".join([f"{point}" for point in job.get('points', [])])
+        points = "\n".join([f"- {point}" for point in job.get('points', [])])
         st.code(points, language="text")
     logging.info("Work experience rendered.")
             
@@ -29,18 +29,21 @@ def render_projects(projects):
     for project in projects:
         header = f"### {project.get('title', 'Untitled Project')}"
         st.write(header)
-        points = "\n".join([f"{point}" for point in project.get('points', [])])
+        points = "\n".join([f"- {point}" for point in project.get('points', [])])
         st.code(points, language="text")
     logging.info("Projects rendered.")
             
 def render_skills(skills):
     logging.info("Rendering skills, total categories: %d", len(skills))
     st.write("## Skills")
+    code_content = ""
     for category in skills:
-        # Display each skill category in a code block for copyability
+        label = category.get('label', '')
         content = category.get('content', '')
-        st.code(f"{category.get('label', '')}: {content}", language="text")
+        code_content += f"{label}: {content}\n"
+    st.code(code_content, language="text")
     logging.info("Skills rendered.")
+
         
 def render_resume(resume_data):
     logging.info("Rendering full resume.")

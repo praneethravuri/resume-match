@@ -5,6 +5,7 @@ import json
 from utils.format_resume_data import render_resume
 import logging
 from db.operations import insert_application
+from utils.helpers import sanitize_filename
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logging.info("Tailor page loaded.")
@@ -20,10 +21,10 @@ st.title("Resume Tailor")
 st.write("Enter the details below to generate a tailored resume in Markdown format.")
 
 with st.form(key="resume_form"):
-    company = st.text_input("Company Name")
-    job_title = st.text_input("Job Title")
-    job_id = st.text_input("Job ID (Optional)")
-    job_description = st.text_area("Job Description", height=200)
+    company = st.text_input("Company Name").strip()
+    job_title = st.text_input("Job Title").strip()
+    job_id = st.text_input("Job ID (Optional)").strip()
+    job_description = st.text_area("Job Description", height=200).strip()
     additional_instructions = st.text_area("Additional Instructions", height=100)
     api_choice = st.radio("Select API", options=["Open AI", "Deepseek"], index=1).lower()
     submit_button = st.form_submit_button(label="Generate Resume Points")
@@ -36,6 +37,9 @@ with st.form(key="resume_form"):
                     process_resume(job_description, additional_instructions, company, job_title, api_choice, job_id)
                 )
             logging.info("Received resume data from process_resume.")
+            
+            st.write("## File Name")
+            st.code(sanitize_filename(company, job_title, job_id))
             
             resume_data_dict = json.loads(resume_data)
             
