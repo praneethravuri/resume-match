@@ -15,4 +15,4 @@ def sanitize_filename(company, title, job_id):
     # The regex below replaces spaces, commas, hyphens, and parentheses with underscores.
     sanitized_file_name = re.sub(r"[\s,\-\(\)]+", "_", temp_file_name)
     logging.info("Sanitized filename: %s", sanitized_file_name)
-    return sanitized_file_name
+    return sanitized_file_name.lower()

@@ -11,11 +11,39 @@ st.set_page_config(page_title="Job Application Tracker", page_icon="📋", layou
 def main():
     logging.info("Starting main function in Tracker.")
     st.title("Job Application Tracker 📋")
+    
+    # Retrieve applications from the database
     applications = get_all_applications()
     if not applications:
         st.info("No applications found. Start adding your job applications to track them.")
         logging.info("No applications found.")
         return
+    
+    # Sort applications by date_applied in descending order (latest first)
+    # Ensure that 'date_applied' is in a sortable format (e.g., 'YYYY-MM-DD')
+    applications.sort(key=lambda app: app.get("date_applied", ""), reverse=True)
+    
+    # Calculate metrics (ignoring "sent cold emails")
+    metrics_statuses = ["not applied", "applied", "interview", "rejected", "selected"]
+    status_counts = {status: 0 for status in metrics_statuses}
+    for app in applications:
+        status = app.get("status", "not applied")
+        if status in status_counts:
+            status_counts[status] += 1
+
+    st.subheader("Application Metrics")
+    col1, col2, col3, col4, col5 = st.columns(5)
+    with col1:
+        st.metric("Applied", status_counts["applied"])
+        
+    with col2:
+        st.metric("Not Applied", status_counts["not applied"])
+    with col3:
+        st.metric("Interview", status_counts["interview"])
+    with col4:
+        st.metric("Rejected", status_counts["rejected"])
+    with col5:
+        st.metric("Selected", status_counts["selected"])
 
     # Initialize filtered_apps to the full applications list
     filtered_apps = applications.copy()

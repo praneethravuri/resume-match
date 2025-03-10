@@ -77,6 +77,7 @@ Core Principles:
 - Do not add more quantifying metrics, if already present in the bullet point. Each bullet point should have only one metric (percentages, numbers, etc.)
 - Do not add skills in the output that do not match with job description and candidate's skills
 - Only add the necessary coursework that are relevant to the job description
+- Make sure each bullet points ends with a period
 
 Return ONLY the modified JSON object - no explanations, comments, or other text. Do not wrap the JSON in code blocks or add any additional formatting.
 """
