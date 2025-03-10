@@ -2,7 +2,6 @@ import streamlit as st
 import logging
 import json
 from db.operations import get_all_applications, update_application_status, delete_application
-from utils.helpers import generate_markdown_resume
 from utils.format_resume_data import render_resume
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -68,7 +67,7 @@ def main():
             col1, col2 = st.columns([3, 1])
             with col1:
                 st.subheader(f"{company} - {title}")
-                st.caption(f"Applied: {date_applied} | ID: {job_id}")
+                st.caption(f"Applied: {date_applied} | Job Id: {job_id}")
             with col2:
                 st.write(f"**Status:** {status_emoji} {current_status.upper()}")
             col1, col2, col3 = st.columns(3)
@@ -86,7 +85,7 @@ def main():
                     logging.info("Application ID %s status changed from %s to %s", doc["_id"], current_status, new_status)
                     st.rerun()
             with col2:
-                if st.button("Show Markdown", key=f"gen_{doc['_id']}"):
+                if st.button("Show Resume Data", key=f"gen_{doc['_id']}"):
                     st.markdown("### Resume Points")
                     render_resume(doc.get("resume_content"))
             with col3:
