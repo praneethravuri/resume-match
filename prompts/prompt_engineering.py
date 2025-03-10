@@ -78,6 +78,7 @@ Core Principles:
 - Do not add skills in the output that do not match with job description and candidate's skills
 - Only add the necessary coursework that are relevant to the job description
 - Make sure each bullet points ends with a period
+- Do not use special characters in the resume which are rejected by ATS
 
 Return ONLY the modified JSON object - no explanations, comments, or other text. Do not wrap the JSON in code blocks or add any additional formatting.
 """
