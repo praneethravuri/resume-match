@@ -38,12 +38,13 @@ with st.form(key="resume_form"):
                 )
             logging.info("Received resume data from process_resume.")
             
+            sanitized_filename = sanitize_filename(company, job_title, job_id)
             st.write("## File Name")
-            st.code(sanitize_filename(company, job_title, job_id))
-            
+            st.code(sanitized_filename)
+                
             resume_data_dict = json.loads(resume_data)
             
-            application_id = insert_application(company, job_title, job_id, resume_data_dict, job_description)
+            application_id = insert_application(company, job_title, job_id, resume_data_dict, job_description, sanitized_filename)
             logging.info("Application inserted with ID: %s", application_id)
             
             render_resume(resume_data_dict)

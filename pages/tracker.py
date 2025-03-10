@@ -82,6 +82,7 @@ def main():
         job_id = doc.get('job_id', 'N/A')
         date_applied = doc.get('date_applied', 'N/A')
         current_status = doc.get("status", "not applied")
+        sanitized_filename = doc.get("file_name", "N/A")
         status_colors = {
             "not applied": "🟠",
             "applied": "🟢",
@@ -96,6 +97,7 @@ def main():
             with col1:
                 st.subheader(f"{company} - {title}")
                 st.caption(f"Applied: {date_applied} | Job Id: {job_id}")
+                st.code(sanitized_filename, language="text")
             with col2:
                 st.write(f"**Status:** {status_emoji} {current_status.upper()}")
             col1, col2, col3 = st.columns(3)

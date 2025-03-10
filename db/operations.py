@@ -11,7 +11,7 @@ def get_applications_collection():
     logging.info("Applications collection retrieved.")
     return collection
 
-def insert_application(company, title, job_id, resume_content, job_description, status="not applied", matching_score=None):
+def insert_application(company, title, job_id, resume_content, job_description, sanitized_filename, status="not applied", matching_score=None):
     logging.info("Inserting application for company: %s, title: %s", company, title)
     collection = get_applications_collection()
     doc = {
@@ -21,6 +21,7 @@ def insert_application(company, title, job_id, resume_content, job_description, 
         "resume_content": resume_content,
         "job_description": job_description,
         "status": status,
+        "file_name" : sanitized_filename
     }
     if matching_score is not None:
         doc["matching_score"] = matching_score
