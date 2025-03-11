@@ -4,7 +4,7 @@ import asyncio
 import json
 from utils.format_resume_data import render_resume
 import logging
-from db.operations import insert_application
+from db.operations import insert_application, update_application_status
 from utils.helpers import sanitize_filename
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -47,6 +47,8 @@ with st.form(key="resume_form"):
             application_id = insert_application(company, job_title, job_id, resume_data_dict, job_description, sanitized_filename)
             logging.info("Application inserted with ID: %s", application_id)
             
+            st.session_state["application_id"] = application_id
+            
             render_resume(resume_data_dict)
             logging.info("Rendered resume data successfully.")
         except Exception as e:
@@ -64,3 +66,4 @@ if st.session_state.get("application_id"):
          update_application_status(st.session_state.application_id, "applied")
          st.success("Application status updated to 'applied'!")
          logging.info("Application status updated to applied for ID: %s", st.session_state.application_id)
+
