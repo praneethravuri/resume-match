@@ -76,7 +76,7 @@ Core Principles:
 - If a bullet point has a quantifying metric, ensure it is specific and accurate, and that the impact is clear
 - Do not add more quantifying metrics, if already present in the bullet point. Each bullet point should have only one metric (percentages, numbers, etc.)
 - Do not add skills in the output that do not match with job description and candidate's skills
-- Only add the necessary coursework that are relevant to the job description
+- Only add the necessary coursework that are relevant to the job description. At most 10 courses can be added.
 - Make sure each bullet points ends with a period
 - Do not use special characters in the resume which are rejected by ATS
 
