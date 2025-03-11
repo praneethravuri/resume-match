@@ -32,15 +32,17 @@ with st.form(key="resume_form"):
     if submit_button and company and job_title and job_description:
         logging.info("Form submitted in Tailor with company: %s, job_title: %s", company, job_title)
         try:
+            sanitized_filename = sanitize_filename(company, job_title, job_id)
+            st.write("## File Name")
+            st.code(sanitized_filename)
+            logging.info("Sanitized filename: %s", sanitized_filename)
             with st.spinner("Processing your resume..."):
                 resume_data = asyncio.run(
                     process_resume(job_description, additional_instructions, company, job_title, api_choice, job_id)
                 )
             logging.info("Received resume data from process_resume.")
             
-            sanitized_filename = sanitize_filename(company, job_title, job_id)
-            st.write("## File Name")
-            st.code(sanitized_filename)
+
                 
             resume_data_dict = json.loads(resume_data)
             
