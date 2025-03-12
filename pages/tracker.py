@@ -75,6 +75,7 @@ def main():
     # Additional metrics for cold email and linkedin not sent
     cold_email_not_sent = sum(1 for app in applications if not app.get("sent_cold_email", False))
     linkedin_not_sent = sum(1 for app in applications if not app.get("sent_linkedin_message", False))
+    favorite_apps = sum(1 for app in applications if not app.get("favorite", True))
     
     st.subheader("Application Metrics")
     col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
@@ -92,6 +93,8 @@ def main():
         st.metric("No Cold Email", cold_email_not_sent)
     with col7:
         st.metric("No LinkedIn Msg", linkedin_not_sent)
+    with col8:
+        st.metric("Favorite", favorite_apps)
 
     # --- Sidebar Filters ---
     with st.sidebar:
