@@ -22,6 +22,7 @@ st.write("Enter the details below to generate a tailored resume in Markdown form
 
 def format_keywords(keywords):
     keywords = keywords.split("\n")
+    print(keywords)
     keywords = [kw.strip().lower() for kw in keywords]
     keywords = list(set(keywords))
     return keywords
