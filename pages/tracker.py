@@ -11,110 +11,170 @@ from utils.format_resume_data import render_resume
 from utils.linkedin_message_generator import generate_linkedin_message
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-logging.info("Tracker page loaded.")
 st.set_page_config(page_title="Job Application Tracker", page_icon="📋", layout="wide")
 
-# Helper: Convert date string to datetime
+# --- Helper Functions ---
+
 def get_date(app):
+    """Convert the date string to a datetime object; return datetime.min if invalid."""
     date_str = app.get("date_applied", "")
     try:
         return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
     except Exception:
         return datetime.min
 
-# Helper: Sorting key for newest-first (date desc, then company asc)
 def sort_date_newest_key(app):
+    """Key: descending date, then ascending company and title."""
     dt = get_date(app)
     try:
         ts = dt.timestamp()
     except Exception:
         ts = 0
-    return (-ts, app.get("company_name", "").lower())
+    return (-ts, app.get("company_name", ""), app.get("title", ""))
 
-# Helper: Sorting key for oldest-first (date asc, then company asc)
 def sort_date_oldest_key(app):
+    """Key: ascending date, then ascending company and title."""
     dt = get_date(app)
     try:
         ts = dt.timestamp()
     except Exception:
         ts = 0
-    return (ts, app.get("company_name", "").lower())
+    return (ts, app.get("company_name", ""), app.get("title", ""))
+
+# --- Initialize Session State ---
+if "current_page" not in st.session_state:
+    st.session_state.current_page = 1
+if "filters" not in st.session_state:
+    st.session_state.filters = {}
+
+# --- Main Application ---
 
 def main():
     st.title("Job Application Tracker 📋")
     
-    # Retrieve applications from the database
+    # Retrieve all applications from the database
     applications = get_all_applications()
     if not applications:
         st.info("No applications found. Start adding your job applications to track them.")
         logging.info("No applications found.")
         return
-    
-    # Start with all applications
-    filtered_apps = applications.copy()
 
-    # Sidebar filters with search functionality and toggles for favorite, cold email, LinkedIn, etc.
+    # --- Sidebar Filters ---
     with st.sidebar:
         st.header("Filters")
         with st.form(key="filter_form"):
             status_options = ["not applied", "applied", "interview", "rejected", "selected"]
-            status_filter = st.multiselect("Status", options=status_options, default=[])
+            status_filter = st.multiselect(
+                "Status", 
+                options=status_options, 
+                default=st.session_state.filters.get("status_filter", [])
+            )
             companies = sorted(list(set(app.get("company_name", "") for app in applications)))
-            company_filter = st.multiselect("Company", options=companies, default=[])
-            search_query = st.text_input("Search (Role or Company)")
-            favorite_filter = st.checkbox("Favorites Only")
-            cold_email_not_sent_filter = st.checkbox("Jobs with NO Cold Email Sent")
-            linkedin_not_sent_filter = st.checkbox("Jobs with NO LinkedIn Message Sent")
-            missing_both_filter = st.checkbox("Jobs missing BOTH Cold Email & LinkedIn")
+            company_filter = st.multiselect(
+                "Company", 
+                options=companies, 
+                default=st.session_state.filters.get("company_filter", [])
+            )
+            search_query = st.text_input(
+                "Search (Role or Company)", 
+                value=st.session_state.filters.get("search_query", "")
+            )
+            favorite_filter = st.checkbox(
+                "Favorites Only", 
+                value=st.session_state.filters.get("favorite_filter", False)
+            )
+            cold_email_not_sent_filter = st.checkbox(
+                "Jobs with NO Cold Email Sent", 
+                value=st.session_state.filters.get("cold_email_not_sent_filter", False)
+            )
+            linkedin_not_sent_filter = st.checkbox(
+                "Jobs with NO LinkedIn Message Sent", 
+                value=st.session_state.filters.get("linkedin_not_sent_filter", False)
+            )
+            missing_both_filter = st.checkbox(
+                "Jobs missing BOTH Cold Email & LinkedIn", 
+                value=st.session_state.filters.get("missing_both_filter", False)
+            )
             sort_options = ["Date (newest first)", "Date (oldest first)", "Company", "Status"]
-            sort_by = st.selectbox("Sort by", options=sort_options, index=0)
+            sort_by = st.selectbox(
+                "Sort by", 
+                options=sort_options, 
+                index=sort_options.index(st.session_state.filters.get("sort_by", "Date (newest first)"))
+            )
             submitted = st.form_submit_button("Apply Filters")
             if submitted:
-                logging.info("Filter form submitted with status: %s, company: %s, search: %s", status_filter, company_filter, search_query)
-                if status_filter:
-                    filtered_apps = [
-                        app for app in filtered_apps 
-                        if (app.get("primary_status", app.get("status", "not applied")) in status_filter 
-                            or app.get("secondary_status", "") in status_filter)
-                    ]
-                if company_filter:
-                    filtered_apps = [app for app in filtered_apps if app.get("company_name", "") in company_filter]
-                if search_query:
-                    query = search_query.lower()
-                    filtered_apps = [
-                        app for app in filtered_apps 
-                        if query in app.get("company_name", "").lower() or query in app.get("title", "").lower()
-                    ]
-                if favorite_filter:
-                    filtered_apps = [app for app in filtered_apps if app.get("favorite", False)]
-                if cold_email_not_sent_filter:
-                    filtered_apps = [app for app in filtered_apps if not app.get("sent_cold_email", False)]
-                if linkedin_not_sent_filter:
-                    filtered_apps = [app for app in filtered_apps if not app.get("sent_linkedin_message", False)]
-                if missing_both_filter:
-                    filtered_apps = [app for app in filtered_apps if not app.get("sent_cold_email", False) and not app.get("sent_linkedin_message", False)]
-                logging.info("Filtered applications count: %d", len(filtered_apps))
+                # Save the current filters into session state
+                st.session_state.filters = {
+                    "status_filter": status_filter,
+                    "company_filter": company_filter,
+                    "search_query": search_query,
+                    "favorite_filter": favorite_filter,
+                    "cold_email_not_sent_filter": cold_email_not_sent_filter,
+                    "linkedin_not_sent_filter": linkedin_not_sent_filter,
+                    "missing_both_filter": missing_both_filter,
+                    "sort_by": sort_by
+                }
+                st.session_state.current_page = 1  # Reset to first page when filters change
+                st.experimental_rerun()
     
-    # Apply sorting based on the selected option
+    # --- Apply Filters ---
+    filtered_apps = applications.copy()
+    filters = st.session_state.filters
+    if filters.get("status_filter"):
+        filtered_apps = [
+            app for app in filtered_apps 
+            if (app.get("primary_status", app.get("status", "not applied")) in filters["status_filter"] 
+                or app.get("secondary_status", "") in filters["status_filter"])
+        ]
+    if filters.get("company_filter"):
+        filtered_apps = [app for app in filtered_apps if app.get("company_name", "") in filters["company_filter"]]
+    if filters.get("search_query"):
+        query = filters["search_query"].lower()
+        filtered_apps = [
+            app for app in filtered_apps 
+            if query in app.get("company_name", "").lower() or query in app.get("title", "").lower()
+        ]
+    if filters.get("favorite_filter"):
+        filtered_apps = [app for app in filtered_apps if app.get("favorite", False)]
+    if filters.get("cold_email_not_sent_filter"):
+        filtered_apps = [app for app in filtered_apps if not app.get("sent_cold_email", False)]
+    if filters.get("linkedin_not_sent_filter"):
+        filtered_apps = [app for app in filtered_apps if not app.get("sent_linkedin_message", False)]
+    if filters.get("missing_both_filter"):
+        filtered_apps = [
+            app for app in filtered_apps 
+            if not app.get("sent_cold_email", False) and not app.get("sent_linkedin_message", False)
+        ]
+    
+    # --- Apply Sorting ---
+    sort_by = filters.get("sort_by", "Date (newest first)")
     if sort_by == "Date (newest first)":
         filtered_apps.sort(key=sort_date_newest_key)
     elif sort_by == "Date (oldest first)":
         filtered_apps.sort(key=sort_date_oldest_key)
     elif sort_by == "Company":
-        filtered_apps.sort(key=lambda app: app.get("company_name", "").lower())
+        filtered_apps.sort(key=lambda app: (app.get("company_name", "").lower(), get_date(app)))
     elif sort_by == "Status":
         filtered_apps.sort(key=lambda app: app.get("primary_status", app.get("status", "not applied")))
     
-    # Implement pagination (10 items per page)
+    # --- Pagination ---
     items_per_page = 10
     total_items = len(filtered_apps)
     total_pages = (total_items + items_per_page - 1) // items_per_page
-    current_page = st.number_input("Page", min_value=1, max_value=total_pages if total_pages > 0 else 1, value=1, step=1)
-    start_index = (current_page - 1) * items_per_page
+    page = st.number_input(
+        "Page", 
+        min_value=1, 
+        max_value=total_pages if total_pages > 0 else 1, 
+        value=st.session_state.current_page, 
+        step=1, 
+        key="page_input"
+    )
+    st.session_state.current_page = page
+    start_index = (page - 1) * items_per_page
     end_index = start_index + items_per_page
     paginated_apps = filtered_apps[start_index:end_index]
-
-    # Display metrics
+    
+    # --- Metrics Display ---
     metrics = {"applied": 0, "not applied": 0, "interview": 0, "rejected": 0, "selected": 0}
     for app in applications:
         primary = app.get("primary_status", app.get("status", "not applied"))
@@ -145,7 +205,7 @@ def main():
     with col7:
         st.metric("No LinkedIn Msg", linkedin_not_sent)
     
-    # Iterate through the paginated applications
+    # --- Display Paginated Applications ---
     for i, doc in enumerate(paginated_apps):
         company = doc.get('company_name', '')
         title = doc.get('title', '')
@@ -179,33 +239,37 @@ def main():
             col_a, col_b, col_c, col_d = st.columns(4)
             with col_a:
                 options = ["not applied", "applied", "interview", "rejected", "selected"]
-                new_status = st.selectbox("Update Status", options=options, index=options.index(effective_status) if effective_status in options else 0, key=f"status_{doc['_id']}")
+                new_status = st.selectbox(
+                    "Update Status", 
+                    options=options, 
+                    index=options.index(effective_status) if effective_status in options else 0, 
+                    key=f"status_{doc['_id']}"
+                )
                 if new_status != effective_status:
                     update_application_status(doc["_id"], new_status)
                     st.success("Updated status!")
-                    logging.info("Application ID %s status changed from %s to %s", doc["_id"], effective_status, new_status)
-                    st.rerun()
+                    st.experimental_rerun()
             with col_b:
                 current_fav = doc.get("favorite", False)
                 new_fav = st.checkbox("Favorite", value=current_fav, key=f"fav_{doc['_id']}")
                 if new_fav != current_fav:
                     update_application_toggle(doc["_id"], "favorite", new_fav)
                     st.success("Favorite updated!")
-                    st.rerun()
+                    st.experimental_rerun()
             with col_c:
                 current_cold = doc.get("sent_cold_email", False)
                 new_cold = st.checkbox("Sent Cold Email", value=current_cold, key=f"cold_{doc['_id']}")
                 if new_cold != current_cold:
                     update_application_toggle(doc["_id"], "sent_cold_email", new_cold)
                     st.success("Cold Email status updated!")
-                    st.rerun()
+                    st.experimental_rerun()
             with col_d:
                 current_linked = doc.get("sent_linkedin_message", False)
                 new_linked = st.checkbox("Sent LinkedIn Message", value=current_linked, key=f"linked_{doc['_id']}")
                 if new_linked != current_linked:
                     update_application_toggle(doc["_id"], "sent_linkedin_message", new_linked)
                     st.success("LinkedIn Message status updated!")
-                    st.rerun()
+                    st.experimental_rerun()
             
             col_resume, col_delete = st.columns(2)
             with col_resume:
@@ -216,8 +280,7 @@ def main():
                 if st.button("Delete", key=f"delete_{doc['_id']}"):
                     delete_application(doc["_id"])
                     st.success("Application deleted!")
-                    logging.info("Deleted application ID %s", doc["_id"])
-                    st.rerun()
+                    st.experimental_rerun()
             
             if st.button("Generate LinkedIn Message", key=f"linkedin_{doc['_id']}"):
                 st.write("LinkedIn message generated!")
@@ -229,7 +292,7 @@ def main():
             if i < len(paginated_apps) - 1:
                 st.divider()
     
-    st.write(f"Page {current_page} of {total_pages}")
+    st.write(f"Page {st.session_state.current_page} of {total_pages}")
 
 if __name__ == "__main__":
     main()
