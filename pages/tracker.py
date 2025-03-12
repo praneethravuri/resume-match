@@ -56,6 +56,25 @@ def main():
         st.info("No applications found. Start adding your job applications to track them.")
         logging.info("No applications found.")
         return
+    
+    # Sort applications by date_applied in descending order (latest first)
+    applications.sort(key=lambda app: app.get("date_applied", ""), reverse=True)
+    
+    # Calculate primary/secondary status metrics
+    metrics = {"applied": 0, "not applied": 0, "interview": 0, "rejected": 0, "selected": 0}
+    for app in applications:
+        primary = app.get("primary_status", app.get("status", "not applied"))
+        secondary = app.get("secondary_status", "")
+        if primary == "applied":
+            metrics["applied"] += 1
+        else:
+            metrics["not applied"] += 1
+        if secondary:
+            metrics[secondary] += 1
+
+    # Additional metrics for cold email and linkedin not sent
+    cold_email_not_sent = sum(1 for app in applications if not app.get("sent_cold_email", False))
+    linkedin_not_sent = sum(1 for app in applications if not app.get("sent_linkedin_message", False))
 
     # --- Sidebar Filters ---
     with st.sidebar:
