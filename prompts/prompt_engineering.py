@@ -96,16 +96,15 @@ def get_user_prompt(job_description, resume, action_verbs, additional_instructio
     prompt = f"""
     
 I am going to provide my resume in JSON format, a job description, and any additional instructions. Your task is to follow the core principles and transform my resume to match the job description.
-    
+
 Resume (JSON):
 {resume}
-
-Job Description:
-{cleaned_job_description}
 
 Additional Instructions:
 {cleaned_instructions}
 
+Job Description:
+{cleaned_job_description}
 """
     logging.info("Generated user prompt.")
     return prompt
