@@ -54,6 +54,6 @@ def render_resume(resume_data):
     
     render_coursework(coursework)
     render_work_experience(experience)
-    render_projects(projects)
     render_skills(skills)
+    render_projects(projects)
     logging.info("Full resume rendered.")
