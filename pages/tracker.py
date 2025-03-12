@@ -78,7 +78,7 @@ def main():
     favorite_apps = sum(1 for app in applications if not app.get("favorite", True))
     
     st.subheader("Application Metrics")
-    col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
+    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
     with col1:
         st.metric("Applied", metrics["applied"])
     with col2:
