@@ -30,7 +30,7 @@ def sort_date_newest_key(app):
         ts = dt.timestamp()
     except Exception:
         ts = 0
-    return (-ts, app.get("company_name", ""), app.get("title", ""))
+    return (-ts, app.get("company_name", "").lower(), app.get("title", "").lower())
 
 def sort_date_oldest_key(app):
     """Key: ascending date, then ascending company and title."""
@@ -39,11 +39,9 @@ def sort_date_oldest_key(app):
         ts = dt.timestamp()
     except Exception:
         ts = 0
-    return (ts, app.get("company_name", ""), app.get("title", ""))
+    return (ts, app.get("company_name", "").lower(), app.get("title", "").lower())
 
 # --- Initialize Session State ---
-if "current_page" not in st.session_state:
-    st.session_state.current_page = 1
 if "filters" not in st.session_state:
     st.session_state.filters = {}
 
@@ -114,7 +112,6 @@ def main():
                     "missing_both_filter": missing_both_filter,
                     "sort_by": sort_by
                 }
-                st.session_state.current_page = 1  # Reset to first page when filters change
                 st.rerun()
     
     # --- Apply Filters ---
@@ -157,56 +154,8 @@ def main():
     elif sort_by == "Status":
         filtered_apps.sort(key=lambda app: app.get("primary_status", app.get("status", "not applied")))
     
-    # --- Pagination ---
-    items_per_page = 10
-    total_items = len(filtered_apps)
-    total_pages = (total_items + items_per_page - 1) // items_per_page
-    page = st.number_input(
-        "Page", 
-        min_value=1, 
-        max_value=total_pages if total_pages > 0 else 1, 
-        value=st.session_state.current_page, 
-        step=1, 
-        key="page_input"
-    )
-    st.session_state.current_page = page
-    start_index = (page - 1) * items_per_page
-    end_index = start_index + items_per_page
-    paginated_apps = filtered_apps[start_index:end_index]
-    
-    # --- Metrics Display ---
-    metrics = {"applied": 0, "not applied": 0, "interview": 0, "rejected": 0, "selected": 0}
-    for app in applications:
-        primary = app.get("primary_status", app.get("status", "not applied"))
-        secondary = app.get("secondary_status", "")
-        if primary == "applied":
-            metrics["applied"] += 1
-        else:
-            metrics["not applied"] += 1
-        if secondary:
-            metrics[secondary] += 1
-    cold_email_not_sent = sum(1 for app in applications if not app.get("sent_cold_email", False))
-    linkedin_not_sent = sum(1 for app in applications if not app.get("sent_linkedin_message", False))
-    
-    st.subheader("Application Metrics")
-    col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
-    with col1:
-        st.metric("Applied", metrics["applied"])
-    with col2:
-        st.metric("Not Applied", metrics["not applied"])
-    with col3:
-        st.metric("Interview", metrics["interview"])
-    with col4:
-        st.metric("Rejected", metrics["rejected"])
-    with col5:
-        st.metric("Selected", metrics["selected"])
-    with col6:
-        st.metric("No Cold Email", cold_email_not_sent)
-    with col7:
-        st.metric("No LinkedIn Msg", linkedin_not_sent)
-    
-    # --- Display Paginated Applications ---
-    for i, doc in enumerate(paginated_apps):
+    # --- Display All Filtered Applications ---
+    for i, doc in enumerate(filtered_apps):
         company = doc.get('company_name', '')
         title = doc.get('title', '')
         job_id = doc.get('job_id', 'N/A')
@@ -289,10 +238,8 @@ def main():
             
             with st.expander("Job Description"):
                 st.write(doc.get('job_description', 'No description available.'))
-            if i < len(paginated_apps) - 1:
+            if i < len(filtered_apps) - 1:
                 st.divider()
     
-    st.write(f"Page {st.session_state.current_page} of {total_pages}")
-
 if __name__ == "__main__":
     main()
