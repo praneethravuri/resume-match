@@ -174,4 +174,48 @@ def main():
                 current_fav = doc.get("favorite", False)
                 new_fav = st.checkbox("Favorite", value=current_fav, key=f"fav_{doc['_id']}")
                 if new_fav != current_fav:
-                 
+                    update_application_toggle(doc["_id"], "favorite", new_fav)
+                    st.success("Favorite updated!")
+                    st.rerun()
+            # Sent Cold Email toggle
+            with col_c:
+                current_cold = doc.get("sent_cold_email", False)
+                new_cold = st.checkbox("Sent Cold Email", value=current_cold, key=f"cold_{doc['_id']}")
+                if new_cold != current_cold:
+                    update_application_toggle(doc["_id"], "sent_cold_email", new_cold)
+                    st.success("Cold Email status updated!")
+                    st.rerun()
+            # Sent LinkedIn Message toggle
+            with col_d:
+                current_linked = doc.get("sent_linkedin_message", False)
+                new_linked = st.checkbox("Sent LinkedIn Message", value=current_linked, key=f"linked_{doc['_id']}")
+                if new_linked != current_linked:
+                    update_application_toggle(doc["_id"], "sent_linkedin_message", new_linked)
+                    st.success("LinkedIn Message status updated!")
+                    st.rerun()
+            col_resume, col_delete = st.columns(2)
+            with col_resume:
+                if st.button("Show Resume Data", key=f"gen_{doc['_id']}"):
+                    st.markdown("### Resume Points")
+                    render_resume(doc.get("resume_content"))
+            with col_delete:
+                if st.button("Delete", key=f"delete_{doc['_id']}"):
+                    delete_application(doc["_id"])
+                    st.success("Application deleted!")
+                    logging.info("Deleted application ID %s", doc["_id"])
+                    st.rerun()
+
+            if st.button("Generate LinkedIn Message", key=f"linkedin_{doc['_id']}"):
+                st.write("LinkedIn message generated!")
+                message = generate_linkedin_message(company, title, job_id)
+                st.code(message, language="text")                    
+            
+            with st.expander("Job Description"):
+                st.write(doc.get('job_description', 'No description available.'))
+            if i < len(paginated_apps) - 1:
+                st.divider()
+    
+    st.write(f"Page {current_page} of {total_pages}")
+
+if __name__ == "__main__":
+    main()
