@@ -172,7 +172,7 @@ def main():
                     update_application_toggle(doc["_id"], "sent_linkedin_message", new_linked)
                     st.success("LinkedIn Message status updated!")
                     st.rerun()
-            col_resume, col_delete, col_linkedin_message = st.columns(3)
+            col_resume, col_delete = st.columns(2)
             with col_resume:
                 if st.button("Show Resume Data", key=f"gen_{doc['_id']}"):
                     st.markdown("### Resume Points")
@@ -183,11 +183,12 @@ def main():
                     st.success("Application deleted!")
                     logging.info("Deleted application ID %s", doc["_id"])
                     st.rerun()
-            with col_linkedin_message:
-                if st.button("Generate LinkedIn Message", key=f"linkedin_{doc['_id']}"):
-                    st.write("LinkedIn message generated!")
-                    message = generate_linkedin_message(company, title, job_id)
-                    st.code(message, language="text")
+
+            if st.button("Generate LinkedIn Message", key=f"linkedin_{doc['_id']}"):
+                st.write("LinkedIn message generated!")
+                message = generate_linkedin_message(company, title, job_id)
+                st.code(message, language="text")                    
+            
             with st.expander("Job Description"):
                 st.write(doc.get('job_description', 'No description available.'))
             if i < len(filtered_apps) - 1:
