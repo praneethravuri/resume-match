@@ -70,7 +70,7 @@ Core Principles:
 - Understand candidate's original skills and modify them to match the skills present in the job description
 - Organize under clear categories (e.g., "Programming Languages," "Web Technologies")
 - Prioritize skills that match the job description's key requirements
-- Use professional, engaging language free of jargon and cliché buzzwords
+- Use professional, engaging language free of jargon and cliché buzzwords (e.g., "hard-working, team player, dynamic, results-driven, self-motivated, detail-oriented, go-getter, strong communication skills, adaptability")
 - Ensure correct grammar, spelling, and punctuation throughout
 - Include relevant industry-specific terminology only if supported by actual experience
 - If a bullet point has a quantifying metric, ensure it is specific and accurate, and that the impact is clear
