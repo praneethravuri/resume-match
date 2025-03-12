@@ -1,6 +1,5 @@
 import streamlit as st
 import logging
-import json
 from datetime import datetime
 from db.operations import (
     get_all_applications, 
@@ -15,13 +14,31 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logging.info("Tracker page loaded.")
 st.set_page_config(page_title="Job Application Tracker", page_icon="📋", layout="wide")
 
-# Helper function to convert date string to datetime
+# Helper: Convert date string to datetime
 def get_date(app):
     date_str = app.get("date_applied", "")
     try:
         return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
     except Exception:
         return datetime.min
+
+# Helper: Sorting key for newest-first (date desc, then company asc)
+def sort_date_newest_key(app):
+    dt = get_date(app)
+    try:
+        ts = dt.timestamp()
+    except Exception:
+        ts = 0
+    return (-ts, app.get("company_name", "").lower())
+
+# Helper: Sorting key for oldest-first (date asc, then company asc)
+def sort_date_oldest_key(app):
+    dt = get_date(app)
+    try:
+        ts = dt.timestamp()
+    except Exception:
+        ts = 0
+    return (ts, app.get("company_name", "").lower())
 
 def main():
     st.title("Job Application Tracker 📋")
@@ -33,46 +50,10 @@ def main():
         logging.info("No applications found.")
         return
     
-    # Sort applications by date_applied (latest first) using datetime conversion
-    applications.sort(key=get_date, reverse=True)
-    
-    # Calculate primary/secondary status metrics
-    metrics = {"applied": 0, "not applied": 0, "interview": 0, "rejected": 0, "selected": 0}
-    for app in applications:
-        primary = app.get("primary_status", app.get("status", "not applied"))
-        secondary = app.get("secondary_status", "")
-        if primary == "applied":
-            metrics["applied"] += 1
-        else:
-            metrics["not applied"] += 1
-        if secondary:
-            metrics[secondary] += 1
-
-    # Additional metrics for cold email and linkedin not sent
-    cold_email_not_sent = sum(1 for app in applications if not app.get("sent_cold_email", False))
-    linkedin_not_sent = sum(1 for app in applications if not app.get("sent_linkedin_message", False))
-    
-    st.subheader("Application Metrics")
-    col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
-    with col1:
-        st.metric("Applied", metrics["applied"])
-    with col2:
-        st.metric("Not Applied", metrics["not applied"])
-    with col3:
-        st.metric("Interview", metrics["interview"])
-    with col4:
-        st.metric("Rejected", metrics["rejected"])
-    with col5:
-        st.metric("Selected", metrics["selected"])
-    with col6:
-        st.metric("No Cold Email", cold_email_not_sent)
-    with col7:
-        st.metric("No LinkedIn Msg", linkedin_not_sent)
-    
-    # Initialize filtered_apps to the full applications list
+    # Start with all applications
     filtered_apps = applications.copy()
 
-    # Sidebar filters with search functionality and toggles for favorite, cold email, and LinkedIn messages
+    # Sidebar filters with search functionality and toggles for favorite, cold email, LinkedIn, etc.
     with st.sidebar:
         st.header("Filters")
         with st.form(key="filter_form"):
@@ -114,6 +95,16 @@ def main():
                     filtered_apps = [app for app in filtered_apps if not app.get("sent_cold_email", False) and not app.get("sent_linkedin_message", False)]
                 logging.info("Filtered applications count: %d", len(filtered_apps))
     
+    # Apply sorting based on the selected option
+    if sort_by == "Date (newest first)":
+        filtered_apps.sort(key=sort_date_newest_key)
+    elif sort_by == "Date (oldest first)":
+        filtered_apps.sort(key=sort_date_oldest_key)
+    elif sort_by == "Company":
+        filtered_apps.sort(key=lambda app: app.get("company_name", "").lower())
+    elif sort_by == "Status":
+        filtered_apps.sort(key=lambda app: app.get("primary_status", app.get("status", "not applied")))
+    
     # Implement pagination (10 items per page)
     items_per_page = 10
     total_items = len(filtered_apps)
@@ -123,25 +114,56 @@ def main():
     end_index = start_index + items_per_page
     paginated_apps = filtered_apps[start_index:end_index]
 
-    # Iterate through the paginated list of applications
+    # Display metrics
+    metrics = {"applied": 0, "not applied": 0, "interview": 0, "rejected": 0, "selected": 0}
+    for app in applications:
+        primary = app.get("primary_status", app.get("status", "not applied"))
+        secondary = app.get("secondary_status", "")
+        if primary == "applied":
+            metrics["applied"] += 1
+        else:
+            metrics["not applied"] += 1
+        if secondary:
+            metrics[secondary] += 1
+    cold_email_not_sent = sum(1 for app in applications if not app.get("sent_cold_email", False))
+    linkedin_not_sent = sum(1 for app in applications if not app.get("sent_linkedin_message", False))
+    
+    st.subheader("Application Metrics")
+    col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
+    with col1:
+        st.metric("Applied", metrics["applied"])
+    with col2:
+        st.metric("Not Applied", metrics["not applied"])
+    with col3:
+        st.metric("Interview", metrics["interview"])
+    with col4:
+        st.metric("Rejected", metrics["rejected"])
+    with col5:
+        st.metric("Selected", metrics["selected"])
+    with col6:
+        st.metric("No Cold Email", cold_email_not_sent)
+    with col7:
+        st.metric("No LinkedIn Msg", linkedin_not_sent)
+    
+    # Iterate through the paginated applications
     for i, doc in enumerate(paginated_apps):
         company = doc.get('company_name', '')
         title = doc.get('title', '')
         job_id = doc.get('job_id', 'N/A')
         date_applied = doc.get('date_applied', 'N/A')
-        # Use secondary status if available; otherwise, use primary status
         primary_status = doc.get("primary_status", doc.get("status", "not applied"))
         secondary_status = doc.get("secondary_status", "")
         effective_status = secondary_status if secondary_status else primary_status
-        # Set emoji based on effective status
-        status_colors = {
+        
+        status_emojis = {
             "not applied": "🟠",
             "applied": "🟢",
             "interview": "🔵",
             "rejected": "🔴",
             "selected": "🟢"
         }
-        status_emoji = status_colors.get(effective_status, "⚪")
+        status_emoji = status_emojis.get(effective_status, "⚪")
+        
         with st.container():
             col1, col2 = st.columns([3, 1])
             with col1:
@@ -150,26 +172,19 @@ def main():
                 st.code(doc.get("file_name", "N/A"), language="text")
             with col2:
                 st.write(f"**Status:** {status_emoji} {effective_status.upper()}")
-            # Display cold email and LinkedIn message indicators
             cold_status = "Sent" if doc.get("sent_cold_email", False) else "Not Sent"
             linkedin_status = "Sent" if doc.get("sent_linkedin_message", False) else "Not Sent"
             st.caption(f"Cold Email: {cold_status} | LinkedIn: {linkedin_status}")
+            
             col_a, col_b, col_c, col_d = st.columns(4)
-            # Status update dropdown
             with col_a:
                 options = ["not applied", "applied", "interview", "rejected", "selected"]
-                new_status = st.selectbox(
-                    "Update Status", 
-                    options=options, 
-                    index=options.index(effective_status) if effective_status in options else 0, 
-                    key=f"status_{doc['_id']}"
-                )
+                new_status = st.selectbox("Update Status", options=options, index=options.index(effective_status) if effective_status in options else 0, key=f"status_{doc['_id']}")
                 if new_status != effective_status:
                     update_application_status(doc["_id"], new_status)
                     st.success("Updated status!")
                     logging.info("Application ID %s status changed from %s to %s", doc["_id"], effective_status, new_status)
                     st.rerun()
-            # Favorite toggle
             with col_b:
                 current_fav = doc.get("favorite", False)
                 new_fav = st.checkbox("Favorite", value=current_fav, key=f"fav_{doc['_id']}")
@@ -177,7 +192,6 @@ def main():
                     update_application_toggle(doc["_id"], "favorite", new_fav)
                     st.success("Favorite updated!")
                     st.rerun()
-            # Sent Cold Email toggle
             with col_c:
                 current_cold = doc.get("sent_cold_email", False)
                 new_cold = st.checkbox("Sent Cold Email", value=current_cold, key=f"cold_{doc['_id']}")
@@ -185,7 +199,6 @@ def main():
                     update_application_toggle(doc["_id"], "sent_cold_email", new_cold)
                     st.success("Cold Email status updated!")
                     st.rerun()
-            # Sent LinkedIn Message toggle
             with col_d:
                 current_linked = doc.get("sent_linkedin_message", False)
                 new_linked = st.checkbox("Sent LinkedIn Message", value=current_linked, key=f"linked_{doc['_id']}")
@@ -193,6 +206,7 @@ def main():
                     update_application_toggle(doc["_id"], "sent_linkedin_message", new_linked)
                     st.success("LinkedIn Message status updated!")
                     st.rerun()
+            
             col_resume, col_delete = st.columns(2)
             with col_resume:
                 if st.button("Show Resume Data", key=f"gen_{doc['_id']}"):
@@ -204,11 +218,11 @@ def main():
                     st.success("Application deleted!")
                     logging.info("Deleted application ID %s", doc["_id"])
                     st.rerun()
-
+            
             if st.button("Generate LinkedIn Message", key=f"linkedin_{doc['_id']}"):
                 st.write("LinkedIn message generated!")
                 message = generate_linkedin_message(company, title, job_id)
-                st.code(message, language="text")                    
+                st.code(message, language="text")
             
             with st.expander("Job Description"):
                 st.write(doc.get('job_description', 'No description available.'))
