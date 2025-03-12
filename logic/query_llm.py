@@ -30,7 +30,7 @@ def load_resume():
         logging.exception("Error loading resume data")
         return None
 
-async def process_resume(job_description, additional_instructions, company, position, api_choice="deepseek", job_id=""):
+async def process_resume(job_description, additional_instructions, company, position, api_choice="deepseek", job_id="", keywords=""):
     """
     Enhance the resume by processing only the bullet points for work experience and projects.
     Merge the enhanced bullet points back into the original resume structure.
@@ -51,7 +51,7 @@ async def process_resume(job_description, additional_instructions, company, posi
         return None
 
     system_prompt = get_system_prompt()
-    user_prompt = get_user_prompt(job_description, original_resume, action_verbs, additional_instructions)
+    user_prompt = get_user_prompt(job_description, original_resume, action_verbs, additional_instructions, keywords)
     logging.info("System prompt and user prompt generated.")
 
     logging.info("Calling API to enhance the bullet points in experience and projects...")

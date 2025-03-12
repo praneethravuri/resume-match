@@ -20,11 +20,18 @@ st.set_page_config(
 st.title("Resume Tailor")
 st.write("Enter the details below to generate a tailored resume in Markdown format.")
 
+def format_keywords(keywords):
+    keywords = keywords.split("\n")
+    keywords = [kw.strip().lower() for kw in keywords]
+    keywords = list(set(keywords))
+    return keywords
+
 with st.form(key="resume_form"):
     company = st.text_input("Company Name").strip()
     job_title = st.text_input("Job Title").strip()
     job_id = st.text_input("Job ID (Optional)").strip()
     job_description = st.text_area("Job Description", height=200).strip()
+    keywords = st.text_area("Keywords", height=200).strip()
     additional_instructions = st.text_area("Additional Instructions", height=100)
     api_choice = st.radio("Select API", options=["Open AI", "Deepseek"], index=1).lower()
     submit_button = st.form_submit_button(label="Generate Resume Points")
@@ -38,7 +45,7 @@ with st.form(key="resume_form"):
             logging.info("Sanitized filename: %s", sanitized_filename)
             with st.spinner("Processing your resume..."):
                 resume_data = asyncio.run(
-                    process_resume(job_description, additional_instructions, company, job_title, api_choice, job_id)
+                    process_resume(job_description, additional_instructions, company, job_title, api_choice, job_id, keywords)
                 )
             logging.info("Received resume data from process_resume.")
             

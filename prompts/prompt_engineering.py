@@ -53,8 +53,9 @@ I am re-writing my resume and I need your help. You are going to act as a profes
 Core Principles:
 - Maintain absolute truthfulness to the candidate's actual experience
 - Transform each bullet point using the STAR methodology (Situation/Task, Action, Result) without explicitly mentioning STAR
-- Identify the keywords in the job description and make sure they are reflected in the bullet points
-- Start each bullet point with a unique action verb provided by the Harvard Business School's resume guide
+- Identify the keywords in the job description and make sure they are reflected in the bullet points. A list of keywords may be provided and should be considered unless they do not reflect candidate's actual experience
+- Use the job description as a guide to emphasize the most relevant skills and experiences
+- Start each bullet point with a unique action verb provided by the action verbs dictionary
 - The bullet points should be concise, impactful, and tailored to the job description. 
 - Write in professional, active voice with impactful action verbs
 - Return only the requested content in the specified format
@@ -87,7 +88,7 @@ Return ONLY the modified JSON object - no explanations, comments, or other text.
     return prompt
 
 
-def get_user_prompt(job_description, resume, action_verbs, additional_instructions):
+def get_user_prompt(job_description, resume, action_verbs, additional_instructions, keywords):
     """Generate optimized user prompt with cleaned text inputs"""
     cleaned_job_description = clean_text(job_description)
     cleaned_instructions = clean_text(
@@ -100,8 +101,14 @@ I am going to provide my resume in JSON format, a job description, and any addit
 Resume (JSON):
 {resume}
 
+Action Verbs:
+{action_verbs}
+
 Additional Instructions:
 {cleaned_instructions}
+
+Keyword to consider:
+{keywords}
 
 Job Description:
 {cleaned_job_description}
