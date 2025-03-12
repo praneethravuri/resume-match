@@ -44,7 +44,7 @@ with st.form(key="resume_form"):
             st.code(sanitized_filename)
             logging.info("Sanitized filename: %s", sanitized_filename)
             job_keywords = format_keywords(keywords)
-            logger.info(f"Formatted keywords: {job_keywords}")
+            logging.info(f"Formatted keywords: {job_keywords}")
             with st.spinner("Processing your resume..."):
                 resume_data = asyncio.run(
                     process_resume(job_description, additional_instructions, company, job_title, api_choice, job_id, job_keywords)
