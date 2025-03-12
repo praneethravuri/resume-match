@@ -3,13 +3,27 @@ import asyncio
 import logging
 
 
+# def call_openai_api(messages):
+#     logging.info("Calling OpenAI API with messages: %s", messages)
+#     client = OpenAI()
+#     completion = client.chat.completions.create(
+#         model="o3-mini",
+#         messages=messages,
+#         reasoning_effort="high"
+#     )
+#     result = completion.choices[0].message.content.strip()
+#     logging.info("OpenAI API response: %s", result)
+#     return result
+
+
 def call_openai_api(messages):
     logging.info("Calling OpenAI API with messages: %s", messages)
     client = OpenAI()
     completion = client.chat.completions.create(
-        model="o3-mini",
+        model="gpt-4o",
         messages=messages,
-        reasoning_effort="high"
+        temperature=0.7,
+        max_completion_tokens=5000,
     )
     result = completion.choices[0].message.content.strip()
     logging.info("OpenAI API response: %s", result)
