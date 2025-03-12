@@ -8,7 +8,7 @@ from db.operations import (
     delete_application
 )
 from utils.format_resume_data import render_resume
-from utils.linkedin_message import generate_linkedin_message
+from utils.linkedin_message_generator import generate_linkedin_message
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logging.info("Tracker page loaded.")
