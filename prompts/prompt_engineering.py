@@ -66,7 +66,7 @@ Core Principles:
 - Begin each bullet with a strong, unique action verb from the provided list when possible
 - Limit experience sections to 6 impactful bullet points (consolidate if needed)
 - Limit project sections to a maximum of 3 bullet points while preserving technical details
-- Remove filler phrases (e.g., "Assisted with," "Helped," "Was responsible for")
+- Remove filler phrases (e.g., "Assisted with," "Helped," "Was responsible for", "Mentored")
 - Understand candidate's original skills and modify them to match the skills present in the job description
 - Organize under clear categories (e.g., "Programming Languages," "Web Technologies")
 - Prioritize skills that match the job description's key requirements
@@ -76,9 +76,10 @@ Core Principles:
 - If a bullet point has a quantifying metric, ensure it is specific and accurate, and that the impact is clear
 - Do not add more quantifying metrics, if already present in the bullet point. Each bullet point should have only one metric (percentages, numbers, etc.)
 - Do not add skills in the output that do not match with job description and candidate's skills
-- Only add the necessary coursework that are relevant to the job description. At most 10 courses can be added.
+- Only add the necessary coursework that are relevant or found as keywords in the job description. At most 10 courses can be added.
 - Make sure each bullet points ends with a period
 - Do not use special characters in the resume which are rejected by ATS
+- Write bullet points for my experience in a way that highlights my achievements as a junior professional with less than three years of experience.
 
 Return ONLY the modified JSON object - no explanations, comments, or other text. Do not wrap the JSON in code blocks or add any additional formatting.
 """
