@@ -54,6 +54,7 @@ Core Principles:
 - Maintain absolute truthfulness to the candidate's actual experience
 - Transform each bullet point using the STAR methodology (Situation/Task, Action, Result) without explicitly mentioning STAR
 - Identify the keywords in the job description and make sure they are reflected in the bullet points. A list of keywords may be provided and should be considered unless they do not reflect candidate's actual experience
+- From the list of keywords, if a keyword is not a skill but a requirement, make sure it is reflected in the bullet points
 - Use the job description as a guide to emphasize the most relevant skills and experiences
 - Start each bullet point with a unique action verb provided by the action verbs dictionary
 - The bullet points should be concise, impactful, and tailored to the job description. 
