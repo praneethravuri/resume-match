@@ -51,28 +51,20 @@ def get_system_prompt():
 I am re-writing my resume and I need your help. You are going to act as a professional resume writer skilled in presenting information concisely and using niche-appropriate language, while avoiding redundancy and cliché terms. Your task is to position my experience as a solution to my target company's pain points, tailoring it specifically so that it's clear that I can manage the primary requirements of the job. I want you to memorize these instructions for the duration of our session.
 
 Core Principles:
-- Maintain absolute truthfulness to the candidate's actual experience
-- Transform each bullet point using the STAR methodology (Situation/Task, Action, Result) without explicitly mentioning STAR
-- Identify the keywords in the job description and make sure they are reflected in the bullet points. A list of keywords may be provided and should be considered unless they do not reflect candidate's actual experience
-- From the list of keywords, if a keyword is not a skill but a requirement, make sure it is reflected in the bullet points but only if it is supported by the candidate's actual experience
+- Accurately represent my authentic experience.
+- Transform each bullet point implicitly using the STAR framework (Situation, Task, Action, Result).
+- Incorporate relevant keywords from the job description into the bullet points. From the provided keyword list, only add non-skill keywords (e.g., "cross-functional", "end-to-end", "user-centric"). Additionally, identify any pertinent keywords missing from my original resume that can be added without exaggerating my experience.
+- If any provided keywords are already present in my resume, subtly emphasize their importance using natural language—do so in a way that does not appear as if they were inserted merely to pass an ATS.
 - Use the job description as a guide to emphasize the most relevant skills and experiences
-- Start each bullet point with a unique action verb provided by the action verbs dictionary
-- The bullet points should be concise, impactful, and tailored to the job description. 
-- Write in professional, active voice with impactful action verbs
-- Return only the requested content in the specified format
+- Use the provided action verbs dictionary to begin each bullet point uniquely.
+- Ensure bullet points are concise, impactful, and tailored to the job requirements.
 - Preserve all authentic skills, experiences, and personal details
 - Tailor content to highlight experience most relevant to the job requirements
 - Define acronyms on first use, then use the acronym consistently
 - Return a valid, properly formatted JSON object with the same structure as the input
-- Maintain section order: personal, education, experience, skills, and projects
-- Begin each bullet with a strong, unique action verb from the provided list when possible
-- Limit experience sections to 6 impactful bullet points (consolidate if needed)
-- Limit project sections to a maximum of 3 bullet points while preserving technical details
-- Remove filler phrases (e.g., "Assisted with," "Helped," "Was responsible for", "Mentored")
-- Understand candidate's original skills and modify them to match the skills present in the job description
-- Organize under clear categories (e.g., "Programming Languages," "Web Technologies")
+- Use professional, engaging language free of jargon, filler phrases (e.g., "Assisted with," "Helped," "Was responsible for", "Mentored"), and cliché buzzwords (e.g., "hard-working, team player, dynamic, results-driven, self-motivated, detail-oriented, go-getter, strong communication skills, adaptability")
+- Organize the skills under clear categories (e.g., "Programming Languages," "Web Technologies")
 - Prioritize skills that match the job description's key requirements
-- Use professional, engaging language free of jargon and cliché buzzwords (e.g., "hard-working, team player, dynamic, results-driven, self-motivated, detail-oriented, go-getter, strong communication skills, adaptability")
 - Ensure correct grammar, spelling, and punctuation throughout
 - Include relevant industry-specific terminology only if supported by actual experience
 - If a bullet point has a quantifying metric, ensure it is specific and accurate, and that the impact is clear
@@ -90,14 +82,21 @@ Return ONLY the modified JSON object - no explanations, comments, or other text.
 
 
 def get_user_prompt(job_description, resume, action_verbs, additional_instructions, keywords):
-    """Generate optimized user prompt with cleaned text inputs"""
     cleaned_job_description = clean_text(job_description)
-    cleaned_instructions = clean_text(
-        additional_instructions) if additional_instructions else ""
-
-    prompt = f"""
+    cleaned_instructions = clean_text(additional_instructions) if additional_instructions else ""
     
-I am going to provide my resume in JSON format, a job description, and any additional instructions. Your task is to follow the core principles and transform my resume to match the job description.
+    prompt = f"""
+I will provide my current resume in JSON format, a job description, a list of action verbs, additional instructions, and a set of keywords extracted from the application. Your task is to transform my resume to align with the job description by following these rules:
+
+1. Maintain authenticity and truthfulness.
+2. Implicitly apply the STAR methodology to rephrase each bullet point.
+3. Start each bullet point with a unique action verb from the provided list.
+4. Integrate relevant keywords from the job description. From the provided keyword list, include only non-skill keywords (e.g., "cross-functional", "end-to-end", "IaC"). Additionally, identify and add any pertinent keywords missing from my original resume that enhance alignment without overstating my experience.
+5. For keywords already present in my resume, subtly emphasize their importance through natural language—ensure they stand out without appearing to be inserted solely for ATS optimization.
+6. Follow the resume structure: personal, education, experience, skills, and projects. Limit the experience section to 6 bullet points and the projects section to 3 bullet points.
+7. Ensure that bullet points are concise, impactful, and free of filler language.
+
+Return ONLY the updated JSON object with no additional commentary.
 
 Resume (JSON):
 {resume}
@@ -108,11 +107,12 @@ Action Verbs:
 Additional Instructions:
 {cleaned_instructions}
 
-Keyword to consider:
+Keywords:
 {keywords}
 
 Job Description:
 {cleaned_job_description}
 """
-    logging.info("Generated user prompt.")
+    logging.info("Generated revised user prompt with subtle keyword highlighting instructions.")
     return prompt
+
