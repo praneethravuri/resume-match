@@ -21,7 +21,6 @@ st.set_page_config(
 st.title("Resume Tailor")
 st.write("Generate ATS-optimized resumes with keyword integration")
 
-
 def format_keywords(keywords):
     """Parse keywords with multiple delimiters"""
     if not keywords:
@@ -31,33 +30,60 @@ def format_keywords(keywords):
     cleaned = [kw.strip().lower() for kw in keywords if kw.strip()]
     return list(set(cleaned))
 
-
+# Main Form
 with st.form(key="tailor_form"):
-    company = st.text_input("Company Name*").strip()
-    job_title = st.text_input("Job Title*").strip()
-    job_id = st.text_input("Job ID").strip()
-    job_description = st.text_area("Job Description*", height=200).strip()
-    keywords = st.text_area("Keywords (comma/newline separated)*",
-                            help="Enter relevant keywords from job description",
-                            height=300).strip()
+    st.subheader("Enter Job Details")
+
+    # Columns for company, title, job_id, and AI model
+    col1, col2 = st.columns(2)
+    with col1:
+        company = st.text_input("Company Name*", placeholder="e.g., Google").strip()
+        job_title = st.text_input("Job Title*", placeholder="e.g., Software Engineer").strip()
+    with col2:
+        job_id = st.text_input("Job ID (optional)", placeholder="e.g., 12345").strip()
+        api_choice = st.radio("AI Model", options=["Deepseek", "Open AI"], index=0)
+
+    # Job description text area
+    job_description = st.text_area(
+        "Job Description*",
+        height=150,
+        placeholder="Paste the job description here..."
+    ).strip()
+
+    # Make a collapsible expander for keywords
+    st.subheader("Keywords")
+    st.caption("Enter relevant keywords from the job description or required skills. Separate them by commas, new lines, or semicolons.")
+    with st.expander("Click to enter keywords (required)"):
+        keywords_text = st.text_area(
+            "",
+            height=150,
+            help="Long keyword lists are easier to see in this expander."
+        ).strip()
+
+    # Additional instructions
     additional_instructions = st.text_area(
-        "Additional Instructions", height=100)
-    api_choice = st.radio("AI Model", options=["Deepseek", "Open AI"], index=0)
+        "Additional Instructions (optional)",
+        height=100,
+        placeholder="Any extra guidance for the AI? e.g., Focus on Python experience, mention open-source contributions..."
+    )
+
+    st.divider()
     submitted = st.form_submit_button("Generate Tailored Resume")
 
     if submitted:
-        if not all([company, job_title, job_description, keywords]):
-            st.error("Please fill required fields (*)")
+        # Validate required fields
+        if not all([company, job_title, job_description, keywords_text]):
+            st.error("Please fill out the required fields (Company, Title, Job Description, Keywords).")
         else:
             with st.spinner("Optimizing resume..."):
                 try:
-                    job_keywords = format_keywords(keywords)
-                    sanitized_name = sanitize_filename(
-                        company, job_title, job_id)
+                    job_keywords = format_keywords(keywords_text)
+                    sanitized_name = sanitize_filename(company, job_title, job_id)
 
-                    st.write("## Filename:")
+                    st.write("## Generated Filename")
                     st.code(sanitized_name, language="text")
-                    # Process resume through LLM
+
+                    # Process resume with LLM
                     enhanced_resume, missing_kws = asyncio.run(
                         process_resume(
                             job_description,
@@ -70,27 +96,24 @@ with st.form(key="tailor_form"):
                         )
                     )
 
-                    # Parse and validate response
-
+                    # Load original resume
                     original_resume = load_resume()
 
-                    # Show keyword integration results
+                    # Validate keyword usage again (in case LLM missed any)
                     missing_kws = validate_keyword_usage(
                         original_resume,
                         enhanced_resume,
                         job_keywords
                     )
 
-                    # Database operations
+                    # Insert record into DB
                     application_id = insert_application(
                         company, job_title, job_id,
                         enhanced_resume, job_description,
                         sanitized_name
                     )
-
                     st.session_state.application_id = application_id
 
-                    # Display results
                     st.success("Resume tailored successfully!")
                     render_resume(enhanced_resume)
 
@@ -98,26 +121,29 @@ with st.form(key="tailor_form"):
                         st.warning(
                             f"Couldn't integrate these keywords: {', '.join(missing_kws)}\n\n"
                             "**Action Required:**\n"
-                            "1. Add manually if accurate\n"
-                            "2. Provide more context for auto-integration\n"
-                            "3. Verify skill authenticity"
+                            "1. Add them manually if accurate.\n"
+                            "2. Provide more context for auto-integration.\n"
+                            "3. Verify the skill authenticity."
                         )
 
                 except json.JSONDecodeError:
-                    st.error("Failed to parse AI response. Please try again.")
+                    st.error("Failed to parse the AI response. Please try again.")
                     logging.error("Invalid JSON response: %s", enhanced_resume)
                 except Exception as e:
-                    st.error("Critical error during processing. Check logs.")
+                    st.error("A critical error occurred. Check the logs for more details.")
                     logging.exception("Tailoring error: %s", str(e))
 
+# Additional controls outside the form
 if st.session_state.get("application_id"):
-    if st.button("Applied"):
+    # "Applied" button updates the application status
+    if st.button("Mark as Applied"):
         from db.operations import update_application_status
         update_application_status(st.session_state.application_id, "applied")
         st.success("Application status updated to 'applied'!")
         logging.info("Application status updated to applied for ID: %s",
                      st.session_state.application_id)
 
+st.divider()
 if st.button("Clear Session"):
     st.session_state.clear()
     st.rerun()
