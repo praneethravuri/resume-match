@@ -105,6 +105,19 @@ Additional Examples
         Keyword: Rust
         Scenario: If the candidate's resume does not list Rust as a known language or skill, even if it is trending, it should not be added to the resume.
         Action: Only include programming languages, tools, or skills that the candidate has proven experience with or documented proficiency.
+        
+Critical Keyword Rules:
+1. INCORPORATE EVERY provided keyword in either:
+   - Bullet points (technical/action terms)
+   - Coursework (academic/conceptual terms)
+2. For technical keywords not in original resume, add ONLY if implied by existing experience
+3. Highlight non-skill keywords (e.g., "end-to-end") in context
+4. Never add unverified technical skills
+
+Examples of Required Integration:
+- "machine learning" → Add to coursework if project exists
+- "scalable systems" → Modify bullet: "Designed scalable system handling..."
+- "CI/CD" → Add: "Implemented CI/CD pipelines using..."
 
 Return ONLY the modified JSON object - no explanations, comments, or other text. Do not wrap the JSON in code blocks or add any additional formatting.
 """
@@ -173,6 +186,19 @@ Additional Examples
         Keyword: Rust
         Scenario: If the candidate's resume does not list Rust as a known language or skill, even if it is trending, it should not be added to the resume.
         Action: Only include programming languages, tools, or skills that the candidate has proven experience with or documented proficiency.
+        
+Critical Keyword Rules:
+1. INCORPORATE EVERY provided keyword in either:
+   - Bullet points (technical/action terms)
+   - Coursework (academic/conceptual terms)
+2. For technical keywords not in original resume, add ONLY if implied by existing experience
+3. Highlight non-skill keywords (e.g., "end-to-end") in context
+4. Never add unverified technical skills
+
+Examples of Required Integration:
+- "machine learning" → Add to coursework if project exists
+- "scalable systems" → Modify bullet: "Designed scalable system handling..."
+- "CI/CD" → Add: "Implemented CI/CD pipelines using..."
 
 Return ONLY the updated JSON object with no additional commentary.
 
@@ -190,6 +216,8 @@ Keywords:
 
 Job Description:
 {cleaned_job_description}
+
+IMPERATIVE: Integrate ALL keywords naturally. FAILURE TO INCLUDE KEYWORDS WILL GET MY APPLICATION REJECTED!
 """
     logging.info("Generated revised user prompt with subtle keyword highlighting instructions.")
     return prompt

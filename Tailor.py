@@ -1,81 +1,106 @@
 import streamlit as st
-from logic.query_llm import process_resume
+from logic.query_llm import process_resume, load_resume, validate_keyword_usage
 import asyncio
 import json
 from utils.format_resume_data import render_resume
 import logging
-from db.operations import insert_application, update_application_status
+from db.operations import insert_application
 from utils.helpers import sanitize_filename
+import re
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-logging.info("Tailor page loaded.")
 
 st.set_page_config(
-    page_title="Resume Tailor and Application Tracker",
+    page_title="Resume Tailor",
     page_icon="🚀",
     layout="centered",
     initial_sidebar_state="expanded"
 )
 
 st.title("Resume Tailor")
-st.write("Enter the details below to generate a tailored resume in Markdown format.")
+st.write("Generate ATS-optimized resumes with keyword integration")
 
 def format_keywords(keywords):
-    keywords = keywords.split("\n")
-    print(keywords)
-    keywords = [kw.strip().lower() for kw in keywords]
-    keywords = list(set(keywords))
-    return keywords
+    """Parse keywords with multiple delimiters"""
+    if not keywords:
+        return []
+    split_pattern = r'[,\n;]'
+    keywords = re.split(split_pattern, keywords)
+    cleaned = [kw.strip().lower() for kw in keywords if kw.strip()]
+    return list(set(cleaned))
 
-with st.form(key="resume_form"):
-    company = st.text_input("Company Name").strip()
-    job_title = st.text_input("Job Title").strip()
-    job_id = st.text_input("Job ID (Optional)").strip()
-    job_description = st.text_area("Job Description", height=200).strip()
-    keywords = st.text_area("Keywords", height=200).strip()
+with st.form(key="tailor_form"):
+    company = st.text_input("Company Name*").strip()
+    job_title = st.text_input("Job Title*").strip()
+    job_id = st.text_input("Job ID").strip()
+    job_description = st.text_area("Job Description*", height=200).strip()
+    keywords = st.text_area("Keywords (comma/newline separated)*", 
+                          help="Enter relevant keywords from job description",
+                          height=100).strip()
     additional_instructions = st.text_area("Additional Instructions", height=100)
-    api_choice = st.radio("Select API", options=["Open AI", "Deepseek"], index=1).lower()
-    submit_button = st.form_submit_button(label="Generate Resume Points")
+    api_choice = st.radio("AI Model", options=["Deepseek", "Open AI"], index=0)
+    submitted = st.form_submit_button("Generate Tailored Resume")
     
-    if submit_button and company and job_title and job_description:
-        logging.info("Form submitted in Tailor with company: %s, job_title: %s", company, job_title)
-        try:
-            sanitized_filename = sanitize_filename(company, job_title, job_id)
-            st.write("## File Name")
-            st.code(sanitized_filename)
-            logging.info("Sanitized filename: %s", sanitized_filename)
-            job_keywords = format_keywords(keywords)
-            logging.info(f"Formatted keywords: {job_keywords}")
-            with st.spinner("Processing your resume..."):
-                resume_data = asyncio.run(
-                    process_resume(job_description, additional_instructions, company, job_title, api_choice, job_id, job_keywords)
-                )
-            logging.info("Received resume data from process_resume.")
-            
+    if submitted:
+        if not all([company, job_title, job_description, keywords]):
+            st.error("Please fill required fields (*)")
+        else:
+            with st.spinner("Optimizing resume..."):
+                try:
+                    job_keywords = format_keywords(keywords)
+                    sanitized_name = sanitize_filename(company, job_title, job_id)
+                    
+                    # Process resume through LLM
+                    llm_response = asyncio.run(
+                        process_resume(
+                            job_description,
+                            additional_instructions,
+                            company,
+                            job_title,
+                            api_choice.lower(),
+                            job_id,
+                            job_keywords
+                        )
+                    )
+                    
+                    # Parse and validate response
+                    resume_data = json.loads(llm_response)
+                    original_resume = load_resume()
+                    
+                    # Show keyword integration results
+                    missing_kws = validate_keyword_usage(
+                        original_resume, 
+                        resume_data,
+                        job_keywords
+                    )
+                    
+                    # Database operations
+                    insert_application(
+                        company, job_title, job_id,
+                        resume_data, job_description,
+                        sanitized_name
+                    )
+                    
+                    # Display results
+                    st.success("Resume tailored successfully!")
+                    render_resume(resume_data)
+                    
+                    if missing_kws:
+                        st.warning(
+                            f"Couldn't integrate these keywords: {', '.join(missing_kws)}\n\n"
+                            "**Action Required:**\n"
+                            "1. Add manually if accurate\n"
+                            "2. Provide more context for auto-integration\n"
+                            "3. Verify skill authenticity"
+                        )
+                    
+                except json.JSONDecodeError:
+                    st.error("Failed to parse AI response. Please try again.")
+                    logging.error("Invalid JSON response: %s", llm_response)
+                except Exception as e:
+                    st.error("Critical error during processing. Check logs.")
+                    logging.exception("Tailoring error: %s", str(e))
 
-                
-            resume_data_dict = json.loads(resume_data)
-            
-            application_id = insert_application(company, job_title, job_id, resume_data_dict, job_description, sanitized_filename)
-            logging.info("Application inserted with ID: %s", application_id)
-            
-            st.session_state["application_id"] = application_id
-            
-            render_resume(resume_data_dict)
-            logging.info("Rendered resume data successfully.")
-        except Exception as e:
-            logging.exception("Error generating resume points in Tailor")
-            st.error("An unexpected error occurred while generating the resume points.")
-            
-        st.session_state["company"] = ""
-        st.session_state["job_title"] = ""
-        st.session_state["job_id"] = ""
-        st.session_state["job_description"] = ""
-        
-if st.session_state.get("application_id"):
-    if st.button("Applied"):
-         from db.operations import update_application_status
-         update_application_status(st.session_state.application_id, "applied")
-         st.success("Application status updated to 'applied'!")
-         logging.info("Application status updated to applied for ID: %s", st.session_state.application_id)
-
+if st.button("Clear Session"):
+    st.session_state.clear()
+    st.rerun()
