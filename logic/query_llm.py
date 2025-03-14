@@ -2,83 +2,103 @@ import re
 import json
 import logging
 import streamlit as st
-from prompts.prompt_engineering import get_system_prompt, get_user_prompt
 import asyncio
+from prompts.prompt_engineering import get_system_prompt, get_user_prompt
 from utils.text_processing import compute_matching_score
+from openai import OpenAI
 
-# Load API keys from Streamlit secrets
+# Configure logging
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s - %(levelname)s - %(message)s")
+
+# Initialize clients
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 DEEPSEEK_API_KEY = st.secrets["DEEPSEEK_API_KEY"]
-
-# Initialize the Deepseek client (used for the deepseek API option)
-from openai import OpenAI
-openai_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
+deepseek_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
 
 def load_resume():
-    """Load resume data from st.secrets; fallback to local file if necessary."""
-    logging.info("Loading resume data.")
+    """Load resume from secrets or file with enhanced error handling"""
     try:
         if "resume" in st.secrets and "data" in st.secrets["resume"]:
-            resume = json.loads(st.secrets["resume"]["data"])
-            logging.info("Resume data loaded from st.secrets.")
-        else:
-            with open("data/resume.json", "r") as f:
-                resume = json.load(f)
-            logging.info("Resume data loaded from local file.")
-        return resume
+            return json.loads(st.secrets["resume"]["data"])
+        with open("data/resume.json", "r") as f:
+            return json.load(f)
     except Exception as e:
-        logging.exception("Error loading resume data")
+        logging.error("Resume loading failed: %s", str(e))
         return None
 
-async def process_resume(job_description, additional_instructions, company, position, api_choice="deepseek", job_id="", keywords=""):
+def validate_keyword_usage(original_resume, enhanced_resume, keywords):
     """
-    Enhance the resume by processing only the bullet points for work experience and projects.
-    Merge the enhanced bullet points back into the original resume structure.
-    Return the final tailored JSON resume.
+    Validate keyword integration and return missing keywords.
+    Only flags keywords missing in both original and enhanced resumes.
     """
-    logging.info("Starting process_resume with company: %s, position: %s", company, position)
+    if not keywords:
+        return []
+    
+    original_text = json.dumps(original_resume).lower()
+    enhanced_text = json.dumps(enhanced_resume).lower()
+    
+    missing = []
+    for kw in keywords:
+        kw_lower = kw.lower()
+        # Check if keyword exists in either version
+        in_original = kw_lower in original_text
+        in_enhanced = kw_lower in enhanced_text
+        
+        if not in_original and not in_enhanced:
+            missing.append(kw)
+    
+    return missing
+
+async def process_resume(job_description, additional_instructions, company, position, 
+                        api_choice="deepseek", job_id="", keywords=[]):
+    """
+    Main processing function with keyword validation and retry logic
+    """
+    logging.info("Starting resume processing for %s at %s", position, company)
+    
     original_resume = load_resume()
-    if original_resume is None:
-        logging.error("Failed to load resume.")
-        return None
+    if not original_resume:
+        st.error("Failed to load resume data")
+        return None, []
 
     try:
         with open("data/action_verbs.json", "r") as f:
             action_verbs = json.load(f)
-        logging.info("Action verbs loaded successfully.")
     except Exception as e:
-        logging.exception("Error loading action_verbs.json")
-        return None
+        logging.error("Action verbs load failed: %s", str(e))
+        return None, []
 
+    # Generate prompts
     system_prompt = get_system_prompt()
-    user_prompt = get_user_prompt(job_description, original_resume, action_verbs, additional_instructions, keywords)
-    logging.info("System prompt and user prompt generated.")
+    user_prompt = get_user_prompt(job_description, original_resume, 
+                                 action_verbs, additional_instructions, keywords)
 
-    logging.info("Calling API to enhance the bullet points in experience and projects...")
-    # Call the appropriate API function based on the api_choice
-    if api_choice == "open ai":
+    # LLM API selection
+    if api_choice == "openai":
         from llm.openai_client import async_call_openai_api
         llm_response = await async_call_openai_api([
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ])
-        logging.info("Received response from OpenAI API.")
-    elif api_choice == "deepseek":
+    else:
         from llm.deepseek_client import async_call_deepseek_api
-        llm_response = await async_call_deepseek_api(system_prompt, user_prompt, openai_client)
-        logging.info("Received response from Deepseek API.")
-    else:
-        logging.error("Invalid API choice provided: %s", api_choice)
-        return None
+        llm_response = await async_call_deepseek_api(system_prompt, user_prompt, deepseek_client)
 
-    pattern = re.compile(r"```(?:json)?\s*([\s\S]+?)\s*```")
-    match = pattern.search(llm_response)
-    if match:
-        llm_response = match.group(1).strip()
-        logging.info("Extracted JSON from API response using regex.")
-    else:
-        llm_response = llm_response.strip()
-        logging.info("No markdown formatting found; using raw API response.")
+    # Response cleaning
+    try:
+        if "```json" in llm_response:
+            llm_response = re.search(r"```json(.*?)```", llm_response, re.DOTALL).group(1).strip()
+        enhanced_resume = json.loads(llm_response)
+    except json.JSONDecodeError:
+        logging.error("JSON decode failed. Raw response: %s", llm_response)
+        st.error("Failed to parse AI response. Please try again.")
+        return None, []
+    except Exception as e:
+        logging.error("Response processing failed: %s", str(e))
+        return None, []
 
-    logging.info("process_resume completed.")
-    return llm_response
+    # Keyword validation
+    missing_keywords = validate_keyword_usage(original_resume, enhanced_resume, keywords)
+    
+    return enhanced_resume, missing_keywords
