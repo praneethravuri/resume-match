@@ -77,7 +77,7 @@ with st.form(key="tailor_form"):
                     )
                     
                     # Database operations
-                    insert_application(
+                    application_id = insert_application(
                         company, job_title, job_id,
                         enhanced_resume, job_description,
                         sanitized_name
