@@ -50,8 +50,8 @@ with st.form(key="tailor_form"):
                     job_keywords = format_keywords(keywords)
                     sanitized_name = sanitize_filename(company, job_title, job_id)
                     
-                    st.write("###Filename:")
-                    st.code(sanitize_filename, language="text")
+                    st.write("## Filename:")
+                    st.code(sanitized_name, language="text")
                     # Process resume through LLM
                     enhanced_resume, missing_kws = asyncio.run(
                         process_resume(
