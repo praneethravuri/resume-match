@@ -53,7 +53,7 @@ I am re-writing my resume and I need your help. You are going to act as a profes
 Core Principles:
 - Accurately represent my authentic experience.
 - Transform each bullet point implicitly using the STAR framework (Situation, Task, Action, Result).
-- Incorporate relevant keywords from the job description into the bullet points. From the provided keyword list, only add non-skill keywords (e.g., "cross-functional", "end-to-end", "user-centric"). Additionally, identify any pertinent keywords missing from my original resume that can be added without exaggerating my experience.
+- You have to incorporate relevant keywords from the job description into the bullet points and coursework. From the provided keyword list, you have to add non-skill keywords (e.g., "cross-functional", "end-to-end", "user-centric"). Additionally, identify any pertinent keywords missing from my original resume that can be added without exaggerating my experience.
 - If any provided keywords are already present in my resume, subtly emphasize their importance using natural language—do so in a way that does not appear as if they were inserted merely to pass an ATS.
 - Use the job description as a guide to emphasize the most relevant skills and experiences
 - Use the provided action verbs dictionary to begin each bullet point uniquely.
@@ -75,6 +75,37 @@ Core Principles:
 - Do not use special characters in the resume which are rejected by ATS
 - Write bullet points for my experience in a way that highlights my achievements as a junior professional with less than three years of experience.
 
+For example, if the keywords include machine learning, operating systems, or cryptography, these should be added to the coursework section where relevant classes or projects are described. Conversely, if the keywords are continuous integration, continuous delivery, microservices, or serverless, you should incorporate these into the bullet points under professional experience or projects. In both cases, rewrite the bullet points or coursework descriptions to seamlessly include these keywords.
+
+It is important to note that if a keyword represents a skill, tool, or language that is not currently present in the resume, you should not add it. Including skills the candidate does not actually possess would be a false representation of their abilities.
+
+Additional Examples
+
+    Coursework Integration:
+
+        Keyword: Artificial Intelligence
+        Scenario: The candidate has taken an advanced course in AI but the term "artificial intelligence" was not explicitly mentioned.
+        Action: Update the coursework section to include "Artificial Intelligence" along with related projects or research work.
+
+        Keyword: Cybersecurity
+        Scenario: The candidate completed a project on network security during their studies.
+        Action: Add "Cybersecurity" to the coursework, highlighting the specific project or class that covered the topic.
+
+    Bullet Points Integration:
+
+        Keyword: Continuous Integration
+        Scenario: The candidate worked on a project using agile methodologies but did not mention continuous integration.
+        Action: Revise the bullet points to include "Implemented continuous integration practices, reducing deployment time by 30%."
+
+        Keyword: Serverless
+        Scenario: The candidate developed applications using cloud-based architectures but the resume did not mention serverless computing.
+        Action: Modify the bullet points to include "Leveraged serverless architecture to optimize scalability and performance of cloud applications."
+
+    Do Not Add Unverified Keywords:
+        Keyword: Rust
+        Scenario: If the candidate's resume does not list Rust as a known language or skill, even if it is trending, it should not be added to the resume.
+        Action: Only include programming languages, tools, or skills that the candidate has proven experience with or documented proficiency.
+
 Return ONLY the modified JSON object - no explanations, comments, or other text. Do not wrap the JSON in code blocks or add any additional formatting.
 """
     logging.info("Generated system prompt.")
@@ -88,13 +119,60 @@ def get_user_prompt(job_description, resume, action_verbs, additional_instructio
     prompt = f"""
 I will provide my current resume in JSON format, a job description, a list of action verbs, additional instructions, and a set of keywords extracted from the application. Your task is to transform my resume to align with the job description by following these rules:
 
-1. Maintain authenticity and truthfulness.
-2. Implicitly apply the STAR methodology to rephrase each bullet point.
-3. Start each bullet point with a unique action verb from the provided list.
-4. Integrate relevant keywords from the job description. From the provided keyword list, include only non-skill keywords (e.g., "cross-functional", "end-to-end", "IaC"). Additionally, identify and add any pertinent keywords missing from my original resume that enhance alignment without overstating my experience.
-5. For keywords already present in my resume, subtly emphasize their importance through natural language—ensure they stand out without appearing to be inserted solely for ATS optimization.
-6. Follow the resume structure: personal, education, experience, skills, and projects. Limit the experience section to 6 bullet points and the projects section to 3 bullet points.
-7. Ensure that bullet points are concise, impactful, and free of filler language.
+- Accurately represent my authentic experience.
+- Transform each bullet point implicitly using the STAR framework (Situation, Task, Action, Result).
+- You have to incorporate relevant keywords from the job description into the bullet points and coursework. From the provided keyword list, you have to add non-skill keywords (e.g., "cross-functional", "end-to-end", "user-centric"). Additionally, identify any pertinent keywords missing from my original resume that can be added without exaggerating my experience.
+- If any provided keywords are already present in my resume, subtly emphasize their importance using natural language—do so in a way that does not appear as if they were inserted merely to pass an ATS.
+- Use the job description as a guide to emphasize the most relevant skills and experiences
+- Use the provided action verbs dictionary to begin each bullet point uniquely.
+- Ensure bullet points are concise, impactful, and tailored to the job requirements.
+- Preserve all authentic skills, experiences, and personal details
+- Tailor content to highlight experience most relevant to the job requirements
+- Define acronyms on first use, then use the acronym consistently
+- Return a valid, properly formatted JSON object with the same structure as the input
+- Use professional, engaging language free of jargon, filler phrases (e.g., "Assisted with," "Helped," "Was responsible for", "Mentored"), and cliché buzzwords (e.g., "hard-working, team player, dynamic, results-driven, self-motivated, detail-oriented, go-getter, strong communication skills, adaptability")
+- Organize the skills under clear categories (e.g., "Programming Languages," "Web Technologies")
+- Prioritize skills that match the job description's key requirements
+- Ensure correct grammar, spelling, and punctuation throughout
+- Include relevant industry-specific terminology only if supported by actual experience
+- If a bullet point has a quantifying metric, ensure it is specific and accurate, and that the impact is clear
+- Do not add more quantifying metrics, if already present in the bullet point. Each bullet point should have only one metric (percentages, numbers, etc.)
+- Do not add skills in the output that do not match with job description and candidate's skills
+- Only add the necessary coursework that are relevant or found as keywords in the job description. At most 10 courses can be added.
+- Make sure each bullet points ends with a period
+- Do not use special characters in the resume which are rejected by ATS
+- Write bullet points for my experience in a way that highlights my achievements as a junior professional with less than three years of experience.
+
+For example, if the keywords include machine learning, operating systems, or cryptography, these should be added to the coursework section where relevant classes or projects are described. Conversely, if the keywords are continuous integration, continuous delivery, microservices, or serverless, you should incorporate these into the bullet points under professional experience or projects. In both cases, rewrite the bullet points or coursework descriptions to seamlessly include these keywords.
+
+It is important to note that if a keyword represents a skill, tool, or language that is not currently present in the resume, you should not add it. Including skills the candidate does not actually possess would be a false representation of their abilities.
+
+Additional Examples
+
+    Coursework Integration:
+
+        Keyword: Artificial Intelligence
+        Scenario: The candidate has taken an advanced course in AI but the term "artificial intelligence" was not explicitly mentioned.
+        Action: Update the coursework section to include "Artificial Intelligence" along with related projects or research work.
+
+        Keyword: Cybersecurity
+        Scenario: The candidate completed a project on network security during their studies.
+        Action: Add "Cybersecurity" to the coursework, highlighting the specific project or class that covered the topic.
+
+    Bullet Points Integration:
+
+        Keyword: Continuous Integration
+        Scenario: The candidate worked on a project using agile methodologies but did not mention continuous integration.
+        Action: Revise the bullet points to include "Implemented continuous integration practices, reducing deployment time by 30%."
+
+        Keyword: Serverless
+        Scenario: The candidate developed applications using cloud-based architectures but the resume did not mention serverless computing.
+        Action: Modify the bullet points to include "Leveraged serverless architecture to optimize scalability and performance of cloud applications."
+
+    Do Not Add Unverified Keywords:
+        Keyword: Rust
+        Scenario: If the candidate's resume does not list Rust as a known language or skill, even if it is trending, it should not be added to the resume.
+        Action: Only include programming languages, tools, or skills that the candidate has proven experience with or documented proficiency.
 
 Return ONLY the updated JSON object with no additional commentary.
 
