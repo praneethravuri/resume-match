@@ -4,7 +4,7 @@ import asyncio
 import json
 from utils.format_resume_data import render_resume
 import logging
-from db.operations import insert_application
+from db.operations import insert_application, update_application_status
 from utils.helpers import sanitize_filename
 import re
 
@@ -50,6 +50,8 @@ with st.form(key="tailor_form"):
                     job_keywords = format_keywords(keywords)
                     sanitized_name = sanitize_filename(company, job_title, job_id)
                     
+                    st.write("###Filename:")
+                    st.code(sanitize_filename, language="text")
                     # Process resume through LLM
                     enhanced_resume, missing_kws = asyncio.run(
                         process_resume(
