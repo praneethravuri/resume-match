@@ -75,11 +75,11 @@ with st.form(key="tailor_form"):
                     )
                     
                     # Database operations
-                    # insert_application(
-                    #     company, job_title, job_id,
-                    #     enhanced_resume, job_description,
-                    #     sanitized_name
-                    # )
+                    insert_application(
+                        company, job_title, job_id,
+                        enhanced_resume, job_description,
+                        sanitized_name
+                    )
                     
                     # Display results
                     st.success("Resume tailored successfully!")
@@ -100,6 +100,13 @@ with st.form(key="tailor_form"):
                 except Exception as e:
                     st.error("Critical error during processing. Check logs.")
                     logging.exception("Tailoring error: %s", str(e))
+                    
+if st.session_state.get("application_id"):
+    if st.button("Applied"):
+         from db.operations import update_application_status
+         update_application_status(st.session_state.application_id, "applied")
+         st.success("Application status updated to 'applied'!")
+         logging.info("Application status updated to applied for ID: %s", st.session_state.application_id)
 
 if st.button("Clear Session"):
     st.session_state.clear()
