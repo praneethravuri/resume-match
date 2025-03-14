@@ -16,6 +16,14 @@ OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 DEEPSEEK_API_KEY = st.secrets["DEEPSEEK_API_KEY"]
 deepseek_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
 
+def format_action_verbs(action_verbs):
+    action_verbs = ""
+    for verb in action_verbs:
+        action_verbs += f"- {verb}: {" ".join(action_verbs[verb])}\n"
+    
+    print(action_verbs)
+    return action_verbs
+
 def load_resume():
     """Load resume from secrets or file with enhanced error handling"""
     try:
@@ -72,7 +80,7 @@ async def process_resume(job_description, additional_instructions, company, posi
     # Generate prompts
     system_prompt = get_system_prompt()
     user_prompt = get_user_prompt(job_description, original_resume, 
-                                 action_verbs, additional_instructions, keywords)
+                                 format_action_verbs(action_verbs), additional_instructions, keywords)
 
     # LLM API selection
     if api_choice == "openai":

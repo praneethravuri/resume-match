@@ -36,7 +36,7 @@ with st.form(key="tailor_form"):
     job_description = st.text_area("Job Description*", height=200).strip()
     keywords = st.text_area("Keywords (comma/newline separated)*", 
                           help="Enter relevant keywords from job description",
-                          height=100).strip()
+                          height=300).strip()
     additional_instructions = st.text_area("Additional Instructions", height=100)
     api_choice = st.radio("AI Model", options=["Deepseek", "Open AI"], index=0)
     submitted = st.form_submit_button("Generate Tailored Resume")
@@ -51,7 +51,7 @@ with st.form(key="tailor_form"):
                     sanitized_name = sanitize_filename(company, job_title, job_id)
                     
                     # Process resume through LLM
-                    llm_response = asyncio.run(
+                    enhanced_resume, missing_kws = asyncio.run(
                         process_resume(
                             job_description,
                             additional_instructions,
@@ -64,26 +64,26 @@ with st.form(key="tailor_form"):
                     )
                     
                     # Parse and validate response
-                    resume_data = json.loads(llm_response)
+                    
                     original_resume = load_resume()
                     
                     # Show keyword integration results
                     missing_kws = validate_keyword_usage(
                         original_resume, 
-                        resume_data,
+                        enhanced_resume,
                         job_keywords
                     )
                     
                     # Database operations
-                    insert_application(
-                        company, job_title, job_id,
-                        resume_data, job_description,
-                        sanitized_name
-                    )
+                    # insert_application(
+                    #     company, job_title, job_id,
+                    #     enhanced_resume, job_description,
+                    #     sanitized_name
+                    # )
                     
                     # Display results
                     st.success("Resume tailored successfully!")
-                    render_resume(resume_data)
+                    render_resume(enhanced_resume)
                     
                     if missing_kws:
                         st.warning(
@@ -96,7 +96,7 @@ with st.form(key="tailor_form"):
                     
                 except json.JSONDecodeError:
                     st.error("Failed to parse AI response. Please try again.")
-                    logging.error("Invalid JSON response: %s", llm_response)
+                    logging.error("Invalid JSON response: %s", enhanced_resume)
                 except Exception as e:
                     st.error("Critical error during processing. Check logs.")
                     logging.exception("Tailoring error: %s", str(e))
