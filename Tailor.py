@@ -143,6 +143,12 @@ if st.session_state.get("application_id"):
         logging.info("Application status updated to applied for ID: %s",
                      st.session_state.application_id)
 
+        # Clear cache, session state, and refresh
+        st.cache_data.clear()
+        st.cache_resource.clear()
+        st.session_state.clear()
+        st.rerun()
+
 st.divider()
 if st.button("Clear Session"):
     st.session_state.clear()
