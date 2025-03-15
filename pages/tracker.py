@@ -27,9 +27,16 @@ def clear_application_cache():
 def get_date(app):
     date_str = app.get("date_applied", "")
     try:
-        # Attempt string -> datetime
+        # If date_str is empty or looks like "0000-...", just raise an error immediately
+        if not date_str or date_str.startswith("0000"):
+            raise ValueError("Invalid date with year=0 or empty string")
+
+        # Attempt to parse a valid datetime
         return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+
     except Exception:
+        # If the date is invalid, use a fallback (e.g., year=1970 or datetime.min)
+        # datetime.min is 0001-01-01, which is valid, so we can use that safely:
         return datetime.min
 
 def sort_date_newest_key(app):
