@@ -27,25 +27,30 @@ def clear_application_cache():
 def get_date(app):
     date_str = app.get("date_applied", "")
     try:
-        # If date_str is empty or looks like "0000-...", just raise an error immediately
+        # If date is empty or starts with '0000', treat it as invalid
         if not date_str or date_str.startswith("0000"):
             raise ValueError("Invalid date with year=0 or empty string")
 
-        # Attempt to parse a valid datetime
-        return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+        dt = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+
+        # If the parsed date is before 1970, forcibly set it to 1970-01-01
+        if dt.year < 1970:
+            dt = datetime(1970, 1, 1)
+
+        return dt
 
     except Exception:
-        # If the date is invalid, use a fallback (e.g., year=1970 or datetime.min)
-        # datetime.min is 0001-01-01, which is valid, so we can use that safely:
-        return datetime.min
+        # Fallback if parsing or any other error occurs
+        return datetime(1970, 1, 1)
 
 def sort_date_newest_key(app):
-    dt = get_date(app)
+    dt = get_date(app)  # guaranteed safe for .timestamp()
     return (-dt.timestamp(), app.get("company_name", "").lower(), app.get("title", "").lower())
 
 def sort_date_oldest_key(app):
-    dt = get_date(app)
+    dt = get_date(app)  # guaranteed safe
     return (dt.timestamp(), app.get("company_name", "").lower(), app.get("title", "").lower())
+
 
 def main():
     st.title("Job Application Tracker 📋")
